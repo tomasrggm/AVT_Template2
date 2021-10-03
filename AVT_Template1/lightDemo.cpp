@@ -33,6 +33,16 @@
 int WindowHandle = 0;
 int WinX = 640, WinY = 480;
 
+
+//isto fui eu que pus
+int cameraFlag = 1;
+float cylinderX = 4;
+float cylinderY = 3;
+float cylinderZ = 4;
+int angulo = 0;
+float incremento = 0;
+float incremento2 = 0;
+
 unsigned int FrameCount = 0;
 
 VSShaderLib shader;
@@ -57,6 +67,8 @@ GLint lPos_uniformId;
 	
 // Camera Position
 float camX, camY, camZ;
+float camX2, camY2, camZ2;
+float camX3, camY3, camZ3;
 
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
@@ -79,6 +91,35 @@ void timer(int value)
 	glutSetWindowTitle(s.c_str());
     FrameCount = 0;
     glutTimerFunc(1000, timer, 0);
+	
+}
+
+
+
+void moveZ(int value)
+{
+
+	cylinderZ += incremento;
+	if (incremento < 0) {
+		incremento += 0.00002f; //para corrigir
+	}
+	if (incremento > 0) {
+		incremento -= 0.00002f;
+	}
+	glutTimerFunc(1, moveZ, 0);
+}
+
+void moveX(int value)
+{
+
+	cylinderX += incremento2;
+	if (incremento2 < 0) {
+		incremento2 += 0.00002f; //para corrigir
+	}
+	if (incremento2 > 0) {
+		incremento2 -= 0.00002f;
+	}
+	glutTimerFunc(1, moveX, 0);
 }
 
 void refresh(int value)
@@ -106,6 +147,7 @@ void changeSize(int w, int h) {
 }
 
 
+
 // ------------------------------------------------------------
 //
 // Render stufff
@@ -121,7 +163,16 @@ void renderScene(void) {
 	loadIdentity(VIEW);
 	loadIdentity(MODEL);
 	// set the camera using a function similar to gluLookAt
-	lookAt(camX, camY, camZ, 0,0,0, 0,1,0);
+	if (cameraFlag == 1) {
+		lookAt(camX + cylinderX, camY + 3, camZ + cylinderZ, cylinderX, cylinderY, cylinderZ, 0, 1, 0);
+	}
+	else if (cameraFlag == 2) {
+		lookAt(4.0f, 10.0f, 4.0f, 3.99f, 0, 4.0f, 0, 1, 0);
+	}
+	else if (cameraFlag == 3) {
+		lookAt(-10, 0, 4, 4, 0, 4, 0, 1, 0);
+	}
+	
 	// use our shader
 	glUseProgram(shader.getProgramIndex());
 
@@ -181,8 +232,9 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 	
-	translate(MODEL, 4.0f, 3.0f, 4.0f);
+	translate(MODEL, cylinderX, cylinderY, cylinderZ);
 	rotate(MODEL, -90, 1.0f, 0, 0);
+	rotate(MODEL, angulo, 0, 0, 1.0f);
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -214,9 +266,10 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, 3.0f, 2.0f, 5.0f);
+	translate(MODEL, cylinderX-1.0f, cylinderY-1.0f, cylinderZ+1.0f);
 	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
+	rotate(MODEL, angulo, 0, 0, 1.0f);
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -248,9 +301,10 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, 3.0f, 2.0f, 3.0f);
+	translate(MODEL, cylinderX - 1.0f, cylinderY - 1.0f, cylinderZ - 1.0f);
 	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
+	rotate(MODEL, angulo, 0, 0, 1.0f);
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -282,9 +336,10 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, 5.0f, 2.0f, 3.0f);
+	translate(MODEL, cylinderX + 1.0f, cylinderY - 1.0f, cylinderZ - 1.0f);
 	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
+	rotate(MODEL, angulo, 0, 0, 1.0f);
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -316,9 +371,10 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, 5.0f, 2.0f, 5.0f);
+	translate(MODEL, cylinderX + 1.0f, cylinderY - 1.0f, cylinderZ + 1.0f);
 	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
+	rotate(MODEL, angulo, 0, 0, 1.0f);
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -360,6 +416,14 @@ void processKeys(unsigned char key, int xx, int yy)
 			break;
 		case 'm': glEnable(GL_MULTISAMPLE); break;
 		case 'n': glDisable(GL_MULTISAMPLE); break;
+		case '1': cameraFlag = 1; break;
+		case '2': cameraFlag = 2; break;
+		case '3': cameraFlag = 3; break;
+
+		case 'q': incremento += 0.001f; angulo = 180; break;
+		case 'a': incremento -= 0.001f; angulo = 0; break;
+		case 'o': incremento2 += 0.001f; angulo = 90; break;
+		case 'p': incremento2 -= 0.001f; angulo = -90; break;
 	}
 }
 
@@ -497,6 +561,7 @@ void init()
 	camZ = r * cos(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
 	camY = r *   						     sin(beta * 3.14f / 180.0f);
 
+
 	
 	float amb[]= {0.2f, 0.15f, 0.1f, 1.0f};
 	float diff[] = {0.8f, 0.6f, 0.4f, 1.0f};
@@ -619,6 +684,8 @@ int main(int argc, char **argv) {
 	glutReshapeFunc(changeSize);
 
 	glutTimerFunc(0, timer, 0);
+	glutTimerFunc(0, moveX, 0);
+	glutTimerFunc(0, moveZ, 0);
 	glutIdleFunc(renderScene);  // Use it for maximum performance
 	//glutTimerFunc(0, refresh, 0);    //use it to to get 60 FPS whatever
 
@@ -627,8 +694,6 @@ int main(int argc, char **argv) {
 	glutMouseFunc(processMouseButtons);
 	glutMotionFunc(processMouseMotion);
 	glutMouseWheelFunc ( mouseWheel ) ;
-	
-
 
 //	return from main loop
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
