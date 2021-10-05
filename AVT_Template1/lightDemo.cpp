@@ -36,9 +36,9 @@ int WinX = 640, WinY = 480;
 
 //isto fui eu que pus
 int cameraFlag = 1;
-float cylinderX = 4;
-float cylinderY = 3;
-float cylinderZ = 4;
+float cylinderX = 15;
+float cylinderY = 1.5;
+float cylinderZ = 2;
 int angulo = 0;
 float incremento = 0;
 float incremento2 = 0;
@@ -47,7 +47,7 @@ unsigned int FrameCount = 0;
 
 VSShaderLib shader;
 
-struct MyMesh mesh[69];
+struct MyMesh mesh[906];
 int objId=0; //id of the object mesh - to be used as index of mesh: mesh[objID] means the current mesh
 
 
@@ -101,10 +101,10 @@ void moveZ(int value)
 
 	cylinderZ += incremento;
 	if (incremento < 0) {
-		incremento += 0.00002f; //para corrigir
+		incremento += 0.0005f; //para corrigir
 	}
 	if (incremento > 0) {
-		incremento -= 0.00002f;
+		incremento -= 0.0005f;
 	}
 	glutTimerFunc(1, moveZ, 0);
 }
@@ -114,10 +114,10 @@ void moveX(int value)
 
 	cylinderX += incremento2;
 	if (incremento2 < 0) {
-		incremento2 += 0.00002f; //para corrigir
+		incremento2 += 0.0005f; //para corrigir
 	}
 	if (incremento2 > 0) {
-		incremento2 -= 0.00002f;
+		incremento2 -= 0.0005f;
 	}
 	glutTimerFunc(1, moveX, 0);
 }
@@ -185,8 +185,8 @@ void renderScene(void) {
 		glUniform4fv(lPos_uniformId, 1, res);
 
 	objId=0;
-	for (int i = 0 ; i < 8; ++i) {
-		for (int j = 0; j < 8; ++j) {
+	for (int i = 0 ; i < 30; ++i) {
+		for (int j = 0; j < 30; ++j) {
 			// send the material
 			loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 			glUniform4fv(loc, 1, mesh[objId].mat.ambient);
@@ -221,7 +221,7 @@ void renderScene(void) {
 		}
 	}
 
-	objId = 64;
+	objId = 900;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
@@ -255,7 +255,7 @@ void renderScene(void) {
 
 	popMatrix(MODEL);
 
-	objId = 65;
+	objId = 901;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
@@ -266,7 +266,7 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, cylinderX-1.0f, cylinderY-1.0f, cylinderZ+1.0f);
+	translate(MODEL, cylinderX-0.4f, cylinderY-0.25f, cylinderZ+0.25f);
 	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
 	rotate(MODEL, angulo, 0, 0, 1.0f);
@@ -290,7 +290,7 @@ void renderScene(void) {
 
 	popMatrix(MODEL);
 
-	objId = 66;
+	objId = 902;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
@@ -301,7 +301,7 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, cylinderX - 1.0f, cylinderY - 1.0f, cylinderZ - 1.0f);
+	translate(MODEL, cylinderX - 0.4f, cylinderY - 0.25f, cylinderZ - 0.25f);
 	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
 	rotate(MODEL, angulo, 0, 0, 1.0f);
@@ -325,7 +325,7 @@ void renderScene(void) {
 
 	popMatrix(MODEL);
 
-	objId = 67;
+	objId = 903;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
@@ -336,7 +336,7 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, cylinderX + 1.0f, cylinderY - 1.0f, cylinderZ - 1.0f);
+	translate(MODEL, cylinderX + 0.4f, cylinderY - 0.25f, cylinderZ - 0.25f);
 	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
 	rotate(MODEL, angulo, 0, 0, 1.0f);
@@ -360,7 +360,7 @@ void renderScene(void) {
 
 	popMatrix(MODEL);
 
-	objId = 68;
+	objId = 904;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
@@ -371,10 +371,42 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, cylinderX + 1.0f, cylinderY - 1.0f, cylinderZ + 1.0f);
+	translate(MODEL, cylinderX + 0.4f, cylinderY - 0.25f, cylinderZ + 0.25f);
 	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
 	rotate(MODEL, angulo, 0, 0, 1.0f);
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
+
+	objId = 905;
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	translate(MODEL, 0.5f, 2.0f, 0.5f);
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -405,13 +437,13 @@ void renderScene(void) {
 
 void processKeys(unsigned char key, int xx, int yy)
 {
-	switch(key) {
+	switch (key) {
 
 		case 27:
 			glutLeaveMainLoop();
 			break;
 
-		case 'c': 
+		case 'c':
 			printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, beta, r);
 			break;
 		case 'm': glEnable(GL_MULTISAMPLE); break;
@@ -420,10 +452,10 @@ void processKeys(unsigned char key, int xx, int yy)
 		case '2': cameraFlag = 2; break;
 		case '3': cameraFlag = 3; break;
 
-		case 'q': incremento += 0.001f; angulo = 180; break;
-		case 'a': incremento -= 0.001f; angulo = 0; break;
-		case 'o': incremento2 += 0.001f; angulo = 90; break;
-		case 'p': incremento2 -= 0.001f; angulo = -90; break;
+		case 'w': if (incremento <= 0.25) { incremento += 0.01f; angulo = 180;  break; }
+		case 's': if (incremento >= -0.25) { incremento -= 0.01f; angulo = 0; break; }
+		case 'a': if (incremento2 <= 0.25) { incremento2 += 0.01f; angulo = 90; break; }
+		case 'd': if (incremento2 >= -0.25) { incremento2 -= 0.01f; angulo = -90; break; }
 	}
 }
 
@@ -575,8 +607,8 @@ void init()
 	float spec1[] = { 0.9f, 0.9f, 0.9f, 1.0f };
 	shininess = 500.0;
 	objId = 0;
-	for (int i = 0; i < 8; i++) {
-		for (int j = 0; j < 8; j++) {
+	for (int i = 0; i < 30; i++) {
+		for (int j = 0; j < 30; j++) {
 			if ((i % 2 == 0 && j % 2 == 0) || (j % 2 != 0 && i % 2 != 0)) {
 				memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
 				memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
@@ -599,52 +631,59 @@ void init()
 		}
 	}
 
-	objId = 64;
+	objId = 900;
 	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
-	createCylinder(3.0f,1.0f,64);
+	createCylinder(1.0f,0.3f,64);
 
-	objId = 65;
+	objId = 901;
 	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
-	createTorus(0.1f,1.0f, 64, 64);
+	createTorus(0.02f, 0.3f, 64, 64);
 
-	objId = 66;
+	objId = 902;
 	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
-	createTorus(0.1f, 1.0f, 64, 64);
+	createTorus(0.02f, 0.3f, 64, 64);
 
-	objId = 67;
+	objId = 903;
 	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
-	createTorus(0.1f, 1.0f, 64, 64);
+	createTorus(0.02f, 0.3f, 64, 64);
 
-	objId = 68;
+	objId = 904;
 	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
-	createTorus(0.1f, 1.0f, 64, 64);
+	createTorus(0.02f, 0.3f, 64, 64);
 
-
+	objId = 905;
+	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
+	mesh[objId].mat.shininess = shininess;
+	mesh[objId].mat.texCount = texcount;
+	createSphere(1.0f, 20);
 
 
 
