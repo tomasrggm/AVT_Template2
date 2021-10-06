@@ -42,6 +42,10 @@ float cylinderZ = 2;
 int angulo = 0;
 float incremento = 0;
 float incremento2 = 0;
+int orangeRot = 0;
+float orangeX = 0;
+float orangeZ = rand()%33;
+float orangeSpeed = 0;
 
 unsigned int FrameCount = 0;
 
@@ -106,7 +110,29 @@ void moveZ(int value)
 	if (incremento > 0) {
 		incremento -= 0.0005f;
 	}
+	if ((incremento > -0.0005f && incremento < 0) || (incremento < 0.0005f && incremento > 0)) { //correcao do bug do carro nunca parar por um erro qualquer de computacao
+		incremento = 0;
+	}
+
 	glutTimerFunc(1, moveZ, 0);
+}
+
+void movementOrange(int value) {
+	orangeRot += 0.01;
+	if (orangeRot >= 360) {
+		orangeRot = 0;
+	}
+	orangeSpeed += 0.0001f;
+	if (orangeSpeed > 0.04f) {
+		orangeSpeed = 0.04f;
+	}
+	orangeX += orangeSpeed;
+	if (orangeX > 32) {
+		orangeX = 0;
+		orangeZ= rand()%33;
+		orangeSpeed = 0;
+	}
+	glutTimerFunc(1, movementOrange, 0);
 }
 
 void moveX(int value)
@@ -118,6 +144,10 @@ void moveX(int value)
 	}
 	if (incremento2 > 0) {
 		incremento2 -= 0.0005f;
+	}
+
+	if ((incremento2 > -0.0005f && incremento2 < 0) || (incremento2 < 0.0005f && incremento2 > 0)) { //correcao do bug do carro nunca parar por um erro qualquer de computacao
+		incremento2 = 0;
 	}
 	glutTimerFunc(1, moveX, 0);
 }
@@ -406,7 +436,9 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, 0.5f, 2.0f, 0.5f);
+
+	rotate(MODEL,orangeRot,0,1.0f,0);
+	translate(MODEL, orangeX, 2.0f, orangeZ);
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -452,10 +484,10 @@ void processKeys(unsigned char key, int xx, int yy)
 		case '2': cameraFlag = 2; break;
 		case '3': cameraFlag = 3; break;
 
-		case 'w': if (incremento <= 0.25) { incremento += 0.01f; angulo = 180;  break; }
-		case 's': if (incremento >= -0.25) { incremento -= 0.01f; angulo = 0; break; }
-		case 'a': if (incremento2 <= 0.25) { incremento2 += 0.01f; angulo = 90; break; }
-		case 'd': if (incremento2 >= -0.25) { incremento2 -= 0.01f; angulo = -90; break; }
+		case 'w': if (incremento <= 0.25f) { incremento += 0.01f; angulo = 180;  break; }
+		case 's': if (incremento >= -0.25f) { incremento -= 0.01f; angulo = 0; break; }
+		case 'a': if (incremento2 <= 0.25f) { incremento2 += 0.01f; angulo = 90; break; }
+		case 'd': if (incremento2 >= -0.25f) { incremento2 -= 0.01f; angulo = -90; break; }
 	}
 }
 
@@ -606,6 +638,10 @@ void init()
 	float diff1[] = { 0.8f, 0.1f, 0.1f, 1.0f };
 	float spec1[] = { 0.9f, 0.9f, 0.9f, 1.0f };
 	shininess = 500.0;
+
+	float amb2[] = { 1.0f, 0.0f, 0.2f, 1.0f };
+	float diff2[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+	float spec2[] = { 0.9f, 0.9f, 0.9f, 1.0f };
 	objId = 0;
 	for (int i = 0; i < 30; i++) {
 		for (int j = 0; j < 30; j++) {
@@ -677,9 +713,9 @@ void init()
 	createTorus(0.02f, 0.3f, 64, 64);
 
 	objId = 905;
-	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.ambient, amb2, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff2, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec2, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
@@ -725,6 +761,7 @@ int main(int argc, char **argv) {
 	glutTimerFunc(0, timer, 0);
 	glutTimerFunc(0, moveX, 0);
 	glutTimerFunc(0, moveZ, 0);
+	glutTimerFunc(0, movementOrange, 0);
 	glutIdleFunc(renderScene);  // Use it for maximum performance
 	//glutTimerFunc(0, refresh, 0);    //use it to to get 60 FPS whatever
 
