@@ -102,10 +102,13 @@ void timer(int value)
 
 void move(int value)
 {
-	float movLado = incremento * cos(angulo);
-	float movFrente = incremento * sin(angulo);
-	cylinderZ += movFrente;
-	cylinderX += movLado;
+	if (angulo > 360 || angulo < -360) {
+		angulo = 0;
+	}
+	float converter = angulo * (3.14 / 180);
+	printf("%d\n", angulo);
+	cylinderZ += cos(converter)*incremento;
+	cylinderX += sin(converter) * incremento;
 	if (incremento < 0) {
 		incremento += 0.0005f; //para corrigir
 	}
@@ -461,6 +464,7 @@ void renderScene(void) {
 
 void processKeys(unsigned char key, int xx, int yy)
 {
+	printf("%c", key);
 	switch (key) {
 
 		case 27:
@@ -476,8 +480,8 @@ void processKeys(unsigned char key, int xx, int yy)
 		case '2': cameraFlag = 2; break;
 		case '3': cameraFlag = 3; break;
 
-		case 'w': if (incremento <= 0.25f) { incremento += 0.01f; break; }
-		case 's': if (incremento >= -0.25f) { incremento -= 0.01f; break; }
+		case 'w': if (incremento <= 0.25f) {  incremento += 0.01f;  } break;
+		case 's': if (incremento >= -0.25f) { incremento -= 0.01f;  } break;
 		case 'a': angulo += 5; break;
 		case 'd': angulo -= 5; break;
 	}
