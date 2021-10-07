@@ -100,10 +100,12 @@ void timer(int value)
 
 
 
-void moveZ(int value)
+void move(int value)
 {
-
-	cylinderZ += incremento;
+	float movLado = incremento * cos(angulo);
+	float movFrente = incremento * sin(angulo);
+	cylinderZ += movFrente;
+	cylinderX += movLado;
 	if (incremento < 0) {
 		incremento += 0.0005f; //para corrigir
 	}
@@ -114,7 +116,7 @@ void moveZ(int value)
 		incremento = 0;
 	}
 
-	glutTimerFunc(1, moveZ, 0);
+	glutTimerFunc(1, move, 0);
 }
 
 void movementOrange(int value) {
@@ -135,22 +137,7 @@ void movementOrange(int value) {
 	glutTimerFunc(1, movementOrange, 0);
 }
 
-void moveX(int value)
-{
 
-	cylinderX += incremento2;
-	if (incremento2 < 0) {
-		incremento2 += 0.0005f; //para corrigir
-	}
-	if (incremento2 > 0) {
-		incremento2 -= 0.0005f;
-	}
-
-	if ((incremento2 > -0.0005f && incremento2 < 0) || (incremento2 < 0.0005f && incremento2 > 0)) { //correcao do bug do carro nunca parar por um erro qualquer de computacao
-		incremento2 = 0;
-	}
-	glutTimerFunc(1, moveX, 0);
-}
 
 void refresh(int value)
 {
@@ -200,7 +187,7 @@ void renderScene(void) {
 		lookAt(4.0f, 10.0f, 4.0f, 3.99f, 0, 4.0f, 0, 1, 0);
 	}
 	else if (cameraFlag == 3) {
-		lookAt(cylinderX, cylinderY + 4, cylinderZ -5, cylinderX, cylinderY, cylinderZ, 0, 1, 0);
+		lookAt(cylinderX, cylinderY + 2, cylinderZ -5, cylinderX, cylinderY, cylinderZ, 0, 1, 0);
 	}
 	
 	// use our shader
@@ -489,8 +476,8 @@ void processKeys(unsigned char key, int xx, int yy)
 		case '2': cameraFlag = 2; break;
 		case '3': cameraFlag = 3; break;
 
-		case 'w': if (incremento <= 0.25f) { incremento += 0.01f; angulo = 180;  break; }
-		case 's': if (incremento >= -0.25f) { incremento -= 0.01f; angulo = 0; break; }
+		case 'w': if (incremento <= 0.25f) { incremento += 0.01f; break; }
+		case 's': if (incremento >= -0.25f) { incremento -= 0.01f; break; }
 		case 'a': angulo += 5; break;
 		case 'd': angulo -= 5; break;
 	}
@@ -682,8 +669,8 @@ void init()
 	createCylinder(1.0f,0.3f,64);
 
 	objId = 901;
-	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
@@ -709,8 +696,8 @@ void init()
 	createTorus(0.02f, 0.3f, 64, 64);
 
 	objId = 904;
-	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
@@ -764,8 +751,7 @@ int main(int argc, char **argv) {
 	glutReshapeFunc(changeSize);
 
 	glutTimerFunc(0, timer, 0);
-	glutTimerFunc(0, moveX, 0);
-	glutTimerFunc(0, moveZ, 0);
+	glutTimerFunc(0, move, 0);
 	glutTimerFunc(0, movementOrange, 0);
 	glutIdleFunc(renderScene);  // Use it for maximum performance
 	//glutTimerFunc(0, refresh, 0);    //use it to to get 60 FPS whatever
