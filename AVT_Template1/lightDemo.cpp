@@ -200,7 +200,7 @@ void renderScene(void) {
 		lookAt(4.0f, 10.0f, 4.0f, 3.99f, 0, 4.0f, 0, 1, 0);
 	}
 	else if (cameraFlag == 3) {
-		lookAt(-10, 0, 4, 4, 0, 4, 0, 1, 0);
+		lookAt(cylinderX, cylinderY + 4, cylinderZ -5, cylinderX, cylinderY, cylinderZ, 0, 1, 0);
 	}
 	
 	// use our shader
@@ -296,10 +296,11 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, cylinderX-0.4f, cylinderY-0.25f, cylinderZ+0.25f);
+	translate(MODEL, cylinderX, cylinderY, cylinderZ);
+	rotate(MODEL, angulo, 0, 1.0f, 0);
+	translate(MODEL, -0.4f, -0.25f, 0.25f);
 	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
-	rotate(MODEL, angulo, 0, 0, 1.0f);
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -331,10 +332,11 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, cylinderX - 0.4f, cylinderY - 0.25f, cylinderZ - 0.25f);
+	translate(MODEL, cylinderX, cylinderY, cylinderZ);
+	rotate(MODEL, angulo, 0, 1.0f, 0);
+	translate(MODEL, -0.4f, -0.25f, -0.25f);
 	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
-	rotate(MODEL, angulo, 0, 0, 1.0f);
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -366,10 +368,12 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, cylinderX + 0.4f, cylinderY - 0.25f, cylinderZ - 0.25f);
+	//rotate(MODEL, angulo, 0, cylinderY, cylinderZ);
+	translate(MODEL, cylinderX, cylinderY, cylinderZ);
+	rotate(MODEL, angulo, 0, 1.0f, 0);
+	translate(MODEL, 0.4f,- 0.25f,- 0.25f);
 	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
-	rotate(MODEL, angulo, 0, 0, 1.0f);
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -401,10 +405,11 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, cylinderX + 0.4f, cylinderY - 0.25f, cylinderZ + 0.25f);
+	translate(MODEL, cylinderX, cylinderY, cylinderZ);
+	rotate(MODEL, angulo, 0, 1.0f, 0);
+	translate(MODEL, 0.4f, -0.25f, 0.25f);
 	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
-	rotate(MODEL, angulo, 0, 0, 1.0f);
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -486,8 +491,8 @@ void processKeys(unsigned char key, int xx, int yy)
 
 		case 'w': if (incremento <= 0.25f) { incremento += 0.01f; angulo = 180;  break; }
 		case 's': if (incremento >= -0.25f) { incremento -= 0.01f; angulo = 0; break; }
-		case 'a': if (incremento2 <= 0.25f) { incremento2 += 0.01f; angulo = 90; break; }
-		case 'd': if (incremento2 >= -0.25f) { incremento2 -= 0.01f; angulo = -90; break; }
+		case 'a': angulo += 5; break;
+		case 'd': angulo -= 5; break;
 	}
 }
 
