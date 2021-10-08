@@ -106,7 +106,6 @@ void move(int value)
 		angulo = 0;
 	}
 	float converter = angulo * (3.14 / 180);
-	printf("%d\n", angulo);
 	cylinderZ += cos(converter)*incremento;
 	cylinderX += sin(converter) * incremento;
 	if (incremento < 0) {
