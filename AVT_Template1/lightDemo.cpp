@@ -35,6 +35,8 @@ int WinX = 640, WinY = 480;
 
 
 //isto fui eu que pus
+int lightFlag = 1; //ambiente
+int lightFlag2 = 1; //tudo o resto
 int cameraFlag = 1;
 float cylinderX = 15;
 float cylinderY = 1.5;
@@ -68,6 +70,13 @@ GLint pvm_uniformId;
 GLint vm_uniformId;
 GLint normal_uniformId;
 GLint lPos_uniformId;
+GLint lPos_uniformId2;
+GLint lPos_uniformId3;
+GLint lPos_uniformId4;
+GLint lPos_uniformId5;
+GLint lPos_uniformId6;
+GLint lStr_uniformId;
+GLint lStr_uniformId2;
 	
 // Camera Position
 float camX, camY, camZ;
@@ -84,7 +93,12 @@ float r = 10.0f;
 // Frame counting and FPS computation
 long myTime,timebase = 0,frame = 0;
 char s[32];
-float lightPos[4] = {4.0f, 6.0f, 2.0f, 1.0f};
+float lightPos[4] = {40.0f, -1.0f, 2.0f, 1.0f};
+float lightPos2[4] = { 0.0f, 6.0f, 100.0f, 1.0f };
+float lightPos3[4] = { 20.0f, 1.0f, 20.0f, 1.0f };
+float lightPos4[4] = { 1.0f, -3.0f, 1.0f, 1.0f };
+float lightPos5[4] = { 10.0f, 6.0f, 10.0f, 1.0f };
+float lightPos6[4] = { 5.0f, 6.0f, 5.0f, 1.0f };
 
 void timer(int value)
 {
@@ -199,9 +213,52 @@ void renderScene(void) {
 
 		//glUniform4fv(lPos_uniformId, 1, lightPos); //efeito capacete do mineiro, ou seja lighPos foi definido em eye coord 
 
+		
+		if (lightFlag == 1) {
+			float res2[4] = { 1.0,1.0,1.0,1.0 };
+			glUniform4fv(lStr_uniformId, 1, res2);
+		}
+		else {
+			float res2[4] = { 0.0,0.0,0.0,0.0 };
+			glUniform4fv(lStr_uniformId, 1, res2);
+		}
+		if (lightFlag2 == 1) {
+			float res2[4] = { 1.0,1.0,1.0,1.0 };
+			glUniform4fv(lStr_uniformId2, 1, res2);
+		}
+		else {
+			float res2[4] = { 0.0,0.0,0.0,0.0 };
+			glUniform4fv(lStr_uniformId2, 1, res2);
+		}
+
 		float res[4];
 		multMatrixPoint(VIEW, lightPos,res);   //lightPos definido em World Coord so is converted to eye space
 		glUniform4fv(lPos_uniformId, 1, res);
+
+		float res3[4];
+		multMatrixPoint(VIEW, lightPos2, res3);   //lightPos definido em World Coord so is converted to eye space
+		glUniform4fv(lPos_uniformId2, 1, res3);
+
+		float res4[4];
+		multMatrixPoint(VIEW, lightPos3, res4);   //lightPos definido em World Coord so is converted to eye space
+		glUniform4fv(lPos_uniformId3, 1, res4);
+
+		float res5[4];
+		multMatrixPoint(VIEW, lightPos4, res5);   //lightPos definido em World Coord so is converted to eye space
+		glUniform4fv(lPos_uniformId4, 1, res5);
+
+		float res6[4];
+		multMatrixPoint(VIEW, lightPos5, res6);   //lightPos definido em World Coord so is converted to eye space
+		glUniform4fv(lPos_uniformId5, 1, res6);
+
+		float res7[4];
+		multMatrixPoint(VIEW, lightPos6, res7);   //lightPos definido em World Coord so is converted to eye space
+		glUniform4fv(lPos_uniformId6, 1, res7);
+
+
+		
+
+
 
 	objId=0;
 	for (int i = 0 ; i < 30; ++i) {
@@ -283,6 +340,7 @@ void renderScene(void) {
 	glUniform4fv(loc, 1, mesh[objId].mat.specular);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
 	glUniform1f(loc, mesh[objId].mat.shininess);
+	
 	pushMatrix(MODEL);
 
 	translate(MODEL, cylinderX, cylinderY, cylinderZ);
@@ -463,18 +521,17 @@ void renderScene(void) {
 
 void processKeys(unsigned char key, int xx, int yy)
 {
-	printf("%c", key);
 	switch (key) {
 
 		case 27:
 			glutLeaveMainLoop();
 			break;
 
-		case 'c':
-			printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, beta, r);
-			break;
+		//case 'c':
+		//	printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, beta, r);
+		//	break;
 		case 'm': glEnable(GL_MULTISAMPLE); break;
-		case 'n': glDisable(GL_MULTISAMPLE); break;
+		//case 'n': glDisable(GL_MULTISAMPLE); break;
 		case '1': cameraFlag = 1; break;
 		case '2': cameraFlag = 2; break;
 		case '3': cameraFlag = 3; break;
@@ -483,6 +540,8 @@ void processKeys(unsigned char key, int xx, int yy)
 		case 's': if (incremento >= -0.25f) { incremento -= 0.01f;  } break;
 		case 'a': angulo += 5; break;
 		case 'd': angulo -= 5; break;
+		case 'n': if (lightFlag == 1) { lightFlag = 0; }else { lightFlag = 1; } break;
+		case 'c': if (lightFlag2 == 1) { lightFlag2 = 0; } else { lightFlag2 = 1; } break;
 	}
 }
 
@@ -601,7 +660,14 @@ GLuint setupShaders() {
 	pvm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_pvm");
 	vm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_viewModel");
 	normal_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_normal");
-	lPos_uniformId = glGetUniformLocation(shader.getProgramIndex(), "l_pos");
+	lPos_uniformId = glGetUniformLocation(shader.getProgramIndex(), "l_pos[0]");
+	lPos_uniformId2 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[1]");
+	lPos_uniformId3 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[2]");
+	lPos_uniformId4 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[3]");
+	lPos_uniformId5 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[4]");
+	lPos_uniformId6 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[5]");
+	lStr_uniformId = glGetUniformLocation(shader.getProgramIndex(), "luzAmbiente");
+	lStr_uniformId2 = glGetUniformLocation(shader.getProgramIndex(), "luzDifusa");
 	
 	printf("InfoLog for Per Fragment Phong Lightning Shader\n%s\n\n", shader.getAllInfoLogs().c_str());
 	
