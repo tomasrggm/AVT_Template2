@@ -86,8 +86,8 @@ GLint lPos_uniformId8;
 	
 // Camera Position
 float camX, camY, camZ;
-float camX2, camY2, camZ2;
-float camX3, camY3, camZ3;
+float followCamX, followCamZ;
+float followRadius = 5;
 
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
@@ -129,7 +129,7 @@ void move(int value)
 		angulo = 0;
 	}
 	float converter = angulo * (3.14 / 180);
-	cylinderZ += cos(converter)*incremento;
+	cylinderZ += cos(converter) * incremento;
 	cylinderX += sin(converter) * incremento;
 	if (incremento < 0) {
 		incremento += 0.0005f; //para corrigir
@@ -178,14 +178,25 @@ void changeSize(int w, int h) {
 
 	float ratio;
 	// Prevent a divide by zero, when window is too short
-	if(h == 0)
+	if (h == 0)
 		h = 1;
 	// set the viewport to be the entire window
 	glViewport(0, 0, w, h);
 	// set the projection matrix
 	ratio = (1.0f * w) / h;
 	loadIdentity(PROJECTION);
-	perspective(53.13f, ratio, 0.1f, 1000.0f);
+	if (cameraFlag == 1) {
+		ortho(-16.0f, 16.0f, -12.0f, 12.0f, 0.1f, 1000.0f);
+		//using WinX = 640, WinY = 480 aspect ratio
+	}
+
+	else if (cameraFlag == 2 || cameraFlag == 4) {
+		perspective(90.0f, ratio, 0.1f, 1000.0f);
+	}
+
+	else if (cameraFlag == 3) {
+		perspective(53.13f, ratio, 0.1f, 1000.0f);
+	}
 }
 
 
@@ -206,13 +217,24 @@ void renderScene(void) {
 	loadIdentity(MODEL);
 	// set the camera using a function similar to gluLookAt
 	if (cameraFlag == 1) {
-		lookAt(camX + cylinderX, camY + 3, camZ + cylinderZ, cylinderX, cylinderY, cylinderZ, 0, 1, 0);
+		lookAt(cylinderX, 10.0f, cylinderZ, cylinderX, cylinderY, cylinderZ + 0.01, 0, 1, 0);
+		changeSize(WinX, WinY);
 	}
 	else if (cameraFlag == 2) {
-		lookAt(4.0f, 10.0f, 4.0f, 3.99f, 0, 4.0f, 0, 1, 0);
+		lookAt(cylinderX, 15.0f, cylinderZ, cylinderX, cylinderY, cylinderZ + 0.01, 0, 1, 0);
+		changeSize(WinX, WinY);
 	}
 	else if (cameraFlag == 3) {
-		lookAt(cylinderX, cylinderY + 2, cylinderZ -5, cylinderX, cylinderY, cylinderZ, 0, 1, 0);
+		// Change camera position so as to change according to car's rotation
+		followCamX = cylinderX + followRadius * sin(-angulo * 3.14f / 180.0f);
+		followCamZ = cylinderZ - followRadius * cos(-angulo * 3.14f / 180.0f);
+
+		lookAt(followCamX, cylinderY + 2, followCamZ, cylinderX, cylinderY, cylinderZ, 0, 1, 0);
+		changeSize(WinX, WinY);
+	}
+	else if (cameraFlag == 4) {
+		lookAt(camX + cylinderX, camY + 3, camZ + cylinderZ, cylinderX, cylinderY, cylinderZ, 0, 1, 0);
+		changeSize(WinX, WinY);
 	}
 	
 	// use our shader
@@ -560,14 +582,13 @@ void processKeys(unsigned char key, int xx, int yy)
 			glutLeaveMainLoop();
 			break;
 
-		//case 'c':
-		//	printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, beta, r);
-		//	break;
+		case 'l': printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, beta, r); break;
 		case 'm': glEnable(GL_MULTISAMPLE); break;
 		//case 'n': glDisable(GL_MULTISAMPLE); break;
 		case '1': cameraFlag = 1; break;
 		case '2': cameraFlag = 2; break;
 		case '3': cameraFlag = 3; break;
+		case '4': cameraFlag = 4; break;
 
 		case 'w': if (incremento <= 0.25f) {  incremento += 0.01f;  } break;
 		case 's': if (incremento >= -0.25f) { incremento -= 0.01f;  } break;
