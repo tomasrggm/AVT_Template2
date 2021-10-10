@@ -37,6 +37,7 @@ int WinX = 640, WinY = 480;
 //isto fui eu que pus
 int lightFlag = 1; //ambiente
 int lightFlag2 = 1; //tudo o resto
+int lightFlag3 = 1; //holofotes
 int cameraFlag = 1;
 float cylinderX = 15;
 float cylinderY = 1.5;
@@ -77,6 +78,11 @@ GLint lPos_uniformId5;
 GLint lPos_uniformId6;
 GLint lStr_uniformId;
 GLint lStr_uniformId2;
+GLint lStr_uniformId3;
+GLint lPos_uniformId7;
+GLint lDir_uniformId;
+GLint lAngle_uniformId;
+GLint lPos_uniformId8;
 	
 // Camera Position
 float camX, camY, camZ;
@@ -99,6 +105,9 @@ float lightPos3[4] = { 20.0f, 1.0f, 20.0f, 1.0f };
 float lightPos4[4] = { 1.0f, -3.0f, 1.0f, 1.0f };
 float lightPos5[4] = { 10.0f, 6.0f, 10.0f, 1.0f };
 float lightPos6[4] = { 5.0f, 6.0f, 5.0f, 1.0f };
+float spotAngle = 10.0f;
+float lightPos7[4] = {cylinderX,cylinderY,cylinderZ,1.0f};
+float lightDir[4] = { 0.0f,0.0f,1.0f,1.0f };
 
 void timer(int value)
 {
@@ -230,6 +239,14 @@ void renderScene(void) {
 			float res2[4] = { 0.0,0.0,0.0,0.0 };
 			glUniform4fv(lStr_uniformId2, 1, res2);
 		}
+		if (lightFlag3 == 1) {
+			float res2[4] = { 1.0,1.0,1.0,1.0 };
+			glUniform4fv(lStr_uniformId3, 1, res2);
+		}
+		else {
+			float res2[4] = { 0.0,0.0,0.0,0.0 };
+			glUniform4fv(lStr_uniformId3, 1, res2);
+		}
 
 		float res[4];
 		multMatrixPoint(VIEW, lightPos,res);   //lightPos definido em World Coord so is converted to eye space
@@ -254,6 +271,22 @@ void renderScene(void) {
 		float res7[4];
 		multMatrixPoint(VIEW, lightPos6, res7);   //lightPos definido em World Coord so is converted to eye space
 		glUniform4fv(lPos_uniformId6, 1, res7);
+
+		
+
+		lPos_uniformId7 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[6]");
+		lPos_uniformId8 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[7]");
+		
+		float res8[4] = {cylinderX+1.0f,cylinderY,cylinderZ,1.0f};
+		float res11[4];
+		multMatrixPoint(VIEW, res8, res11);
+		glUniform4fv(lPos_uniformId7, 1, res11);
+
+		float res9[4] = { cylinderX-1.0f,cylinderY,cylinderZ,1.0f };
+		float res10[4];
+		multMatrixPoint(VIEW, res9, res10);
+		glUniform4fv(lPos_uniformId8, 1, res10);
+
 
 
 		
@@ -542,6 +575,7 @@ void processKeys(unsigned char key, int xx, int yy)
 		case 'd': angulo -= 5; break;
 		case 'n': if (lightFlag == 1) { lightFlag = 0; }else { lightFlag = 1; } break;
 		case 'c': if (lightFlag2 == 1) { lightFlag2 = 0; } else { lightFlag2 = 1; } break;
+		case 'h': if (lightFlag3 == 1) { lightFlag3 = 0; } else { lightFlag3 = 1; } break;
 	}
 }
 
@@ -668,6 +702,8 @@ GLuint setupShaders() {
 	lPos_uniformId6 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[5]");
 	lStr_uniformId = glGetUniformLocation(shader.getProgramIndex(), "luzAmbiente");
 	lStr_uniformId2 = glGetUniformLocation(shader.getProgramIndex(), "luzDifusa");
+	lStr_uniformId3 = glGetUniformLocation(shader.getProgramIndex(), "luzHolofote");
+
 	
 	printf("InfoLog for Per Fragment Phong Lightning Shader\n%s\n\n", shader.getAllInfoLogs().c_str());
 	

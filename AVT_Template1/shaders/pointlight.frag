@@ -12,41 +12,65 @@ struct Materials {
 };
 
 
+float l_spotCutOff = 0.720f;
+vec4 l_spotDir = vec4(0.0,0.0,-1.0,1.0);
+
+
+
+
 uniform vec4 luzAmbiente;
 uniform vec4 luzDifusa;
+uniform vec4 luzHolofote;
 uniform Materials mat;
 
 in Data {
 	vec3 normal;
 	vec3 eye;
 	vec3 lightDir;
-} DataIn[6];
+} DataIn[8];
 
-const int MaxLights = 10;
 
 
 void main() {
-
 	vec4 spec = vec4(0.0);
 	vec4 accumulatedValue = vec4(0.0);
 
-	for(int i = 0; i < 6; ++i){
-		vec3 n = normalize(DataIn[i].normal);
-		vec3 l = normalize(DataIn[i].lightDir);
-		vec3 e = normalize(DataIn[i].eye);
+	for(int i = 0; i < 8; ++i){
+		if(i < 6){
+			vec3 n = normalize(DataIn[i].normal);
+			vec3 l = normalize(DataIn[i].lightDir);
+			vec3 e = normalize(DataIn[i].eye);
 
-		float intensity = max(dot(n,l), 0.0);
+			float intensity = max(dot(n,l), 0.0);
 
 	
-		if (intensity > 0.0) {
+			if (intensity > 0.0) {
 
-			vec3 h = normalize(l + e);
-			float intSpec = max(dot(h,n), 0.0);
-			spec = mat.specular * pow(intSpec, mat.shininess);
-			accumulatedValue +=(spec + intensity*mat.diffuse);
+				vec3 h = normalize(l + e);
+				float intSpec = max(dot(h,n), 0.0);
+				spec = mat.specular * pow(intSpec, mat.shininess);
+				accumulatedValue +=(spec + intensity*mat.diffuse)* luzDifusa;
+			}
+		}else{
+			float intensity = 0.0;
+			vec4 spec = vec4(0.0);
+			vec3 ld = normalize(DataIn[i].lightDir);
+			vec3 sd = normalize(vec3(-l_spotDir));
+			if (dot(sd,ld) > l_spotCutOff) {
+				vec3 n = normalize(DataIn[i].normal);
+				intensity = max(dot(n,ld), 0.0);
+				if (intensity > 0.0) {
+					vec3 eye = normalize(DataIn[i].eye);
+					vec3 h = normalize(ld + eye);
+					float intSpec = max(dot(h,n), 0.0);
+					spec = mat.specular * pow(intSpec, mat.shininess);
+					accumulatedValue += (spec + intensity*mat.diffuse) * luzHolofote;
+				}
+			}
 		}
+
 	}
 
 	
-	colorOut = max(accumulatedValue * luzDifusa, mat.ambient * luzAmbiente);
+	colorOut = max(accumulatedValue , mat.ambient * luzAmbiente);
 }
