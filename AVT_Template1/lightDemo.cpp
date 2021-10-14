@@ -86,15 +86,13 @@ GLint lPos_uniformId8;
 	
 // Camera Position
 float camX, camY, camZ;
-float followCamX, followCamZ;
-float followRadius = 5;
 
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
 
 // Camera Spherical Coordinates
 float alpha = 39.0f, beta = 51.0f;
-float r = 10.0f;
+float r = 5.0f;
 
 // Frame counting and FPS computation
 long myTime,timebase = 0,frame = 0;
@@ -190,12 +188,12 @@ void changeSize(int w, int h) {
 		//using WinX = 640, WinY = 480 aspect ratio
 	}
 
-	else if (cameraFlag == 2 || cameraFlag == 4) {
+	else if (cameraFlag == 2) {
 		perspective(90.0f, ratio, 0.1f, 1000.0f);
 	}
 
 	else if (cameraFlag == 3) {
-		perspective(53.13f, ratio, 0.1f, 1000.0f);
+		perspective(70.13f, ratio, 0.1f, 1000.0f);
 	}
 }
 
@@ -216,24 +214,22 @@ void renderScene(void) {
 	loadIdentity(VIEW);
 	loadIdentity(MODEL);
 	// set the camera using a function similar to gluLookAt
-	if (cameraFlag == 1) {
+	if (cameraFlag == 1) { //Fixed ortho camera
 		lookAt(cylinderX, 10.0f, cylinderZ, cylinderX, cylinderY, cylinderZ + 0.01, 0, 1, 0);
 		changeSize(WinX, WinY);
 	}
-	else if (cameraFlag == 2) {
+	else if (cameraFlag == 2) { //Fixed perspective camera
 		lookAt(cylinderX, 15.0f, cylinderZ, cylinderX, cylinderY, cylinderZ + 0.01, 0, 1, 0);
 		changeSize(WinX, WinY);
 	}
-	else if (cameraFlag == 3) {
-		// Change camera position so as to change according to car's rotation
-		followCamX = cylinderX + followRadius * sin(-angulo * 3.14f / 180.0f);
-		followCamZ = cylinderZ - followRadius * cos(-angulo * 3.14f / 180.0f);
+	else if (cameraFlag == 3) { //Movement camera
+		lookAt(camX + cylinderX, camY + cylinderY, camZ + cylinderZ, cylinderX, cylinderY, cylinderZ, 0, 1, 0);
 
-		lookAt(followCamX, cylinderY + 2, followCamZ, cylinderX, cylinderY, cylinderZ, 0, 1, 0);
-		changeSize(WinX, WinY);
-	}
-	else if (cameraFlag == 4) {
-		lookAt(camX + cylinderX, camY + 3, camZ + cylinderZ, cylinderX, cylinderY, cylinderZ, 0, 1, 0);
+		//Translate camera to car's coordinates, rotate, and return back to original position
+		translate(VIEW, cylinderX, cylinderY, cylinderZ);
+		rotate(VIEW, -angulo, 0.0, 1.0, 0.0);
+		translate(VIEW, -cylinderX, -cylinderY, -cylinderZ);
+
 		changeSize(WinX, WinY);
 	}
 	
@@ -588,7 +584,6 @@ void processKeys(unsigned char key, int xx, int yy)
 		case '1': cameraFlag = 1; break;
 		case '2': cameraFlag = 2; break;
 		case '3': cameraFlag = 3; break;
-		case '4': cameraFlag = 4; break;
 
 		case 'w': if (incremento <= 0.25f) {  incremento += 0.01f;  } break;
 		case 's': if (incremento >= -0.25f) { incremento -= 0.01f;  } break;
