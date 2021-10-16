@@ -43,8 +43,7 @@ float cylinderX = 5;
 float cylinderY = 1.5;
 float cylinderZ = -48;
 int angulo = 0;
-float incremento = 0;
-float incremento2 = 0;
+float incremento = 0; //acelaracao do carro
 int orangeRot = 0;
 float orangeX = 0;
 float orangeZ = (rand() % 100) - 45;
@@ -124,6 +123,17 @@ void timer(int value)
 	
 }
 
+void colision(int value) {
+	if (cylinderX < 2.0 && cylinderX > 0 && cylinderZ > -46.5 && cylinderZ < 46.5) {
+		cylinderX = 2;
+		incremento = 0;
+	}
+	if (cylinderX > 8.0 && cylinderX < 10.0 && cylinderZ > -46.5 && cylinderZ < 46.5) {
+		cylinderX = 8;
+		incremento = 0;
+	}
+	glutTimerFunc(1, colision, 0);
+}
 
 
 void move(int value)
@@ -281,64 +291,19 @@ void renderScene(void) {
 
 		
 
-		lPos_uniformId7 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[6]");
-		lPos_uniformId8 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[7]");
+		lPos_uniformId7 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[6]"); //holofote
+		lPos_uniformId8 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[7]"); //holofote
 		
-		float res8[4] = {cylinderX+1.0f,cylinderY,cylinderZ,1.0f};
+		float res8[4] = {cylinderX+0.5f,cylinderY,cylinderZ,1.0f};
 		float res11[4];
 		multMatrixPoint(VIEW, res8, res11);
 		glUniform4fv(lPos_uniformId7, 1, res11);
 
-		float res9[4] = { cylinderX-1.0f,cylinderY,cylinderZ,1.0f };
+		float res9[4] = { cylinderX-0.5f,cylinderY,cylinderZ,1.0f };
 		float res10[4];
 		multMatrixPoint(VIEW, res9, res10);
 		glUniform4fv(lPos_uniformId8, 1, res10);
 
-
-
-		
-
-
-
-	objId=0;
-
-	/*objId = 0;
->>>>>>> andreTests
-	for (int i = 0 ; i < 30; ++i) {
-		for (int j = 0; j < 30; ++j) {
-			// send the material
-			loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-			glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-			loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-			glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-			loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-			glUniform4fv(loc, 1, mesh[objId].mat.specular);
-			loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-			glUniform1f(loc,mesh[objId].mat.shininess);
-			pushMatrix(MODEL);
-			translate(MODEL, i*1.0f, 0.0f, j*1.0f);
-
-			// send matrices to OGL
-			computeDerivedMatrix(PROJ_VIEW_MODEL);
-			glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-			glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-			computeNormalMatrix3x3();
-			glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-			// Render mesh
-			glBindVertexArray(mesh[objId].vao);
-			
-			if (!shader.isProgramValid()) {
-				printf("Program Not Valid!\n");
-				exit(1);	
-			}
-			glDrawElements(mesh[objId].type,mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-			glBindVertexArray(0);
-
-			popMatrix(MODEL);
-			objId++;
-		}
-	}*/
 
 	objId = 0;
 	// send the material
@@ -704,14 +669,13 @@ void renderScene(void) {
 		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
 		glUniform1f(loc, mesh[objId].mat.shininess);
 		pushMatrix(MODEL);
-		translate(MODEL, 1.0f, 1.15f, 1.5f +i);
+		translate(MODEL, 1.0f, 1.15f, 1.5f + i);
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);
 		glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
 		glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
 		computeNormalMatrix3x3();
 		glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
 		// Render mesh
 		glBindVertexArray(mesh[objId].vao);
 
@@ -764,6 +728,7 @@ void renderScene(void) {
 	glutSwapBuffers();
 }
 
+
 // ------------------------------------------------------------
 //
 // Events from the Keyboard
@@ -789,8 +754,8 @@ void processKeys(unsigned char key, int xx, int yy)
 
 		case 'w': if (incremento <= 0.25f) {  incremento += 0.01f;  } break;
 		case 's': if (incremento >= -0.25f) { incremento -= 0.01f;  } break;
-		case 'a': angulo += 5; break;
-		case 'd': angulo -= 5; break;
+		case 'a': angulo += 5; if (incremento <= 0.02f) { incremento += 0.01f; } break;
+		case 'd': angulo -= 5; if (incremento <= 0.02f) { incremento += 0.01f; } break;
 		case 'n': if (lightFlag == 1) { lightFlag = 0; }else { lightFlag = 1; } break;
 		case 'c': if (lightFlag2 == 1) { lightFlag2 = 0; } else { lightFlag2 = 1; } break;
 		case 'h': if (lightFlag3 == 1) { lightFlag3 = 0; } else { lightFlag3 = 1; } break;
@@ -958,30 +923,7 @@ void init()
 	float amb2[] = { 1.0f, 0.0f, 0.2f, 1.0f };
 	float diff2[] = { 1.0f, 0.0f, 0.0f, 1.0f };
 	float spec2[] = { 0.9f, 0.9f, 0.9f, 1.0f };
-	/*objId = 0;
-	for (int i = 0; i < 30; i++) {
-		for (int j = 0; j < 30; j++) {
-			if ((i % 2 == 0 && j % 2 == 0) || (j % 2 != 0 && i % 2 != 0)) {
-				memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
-				memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
-				memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
-				memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
-				mesh[objId].mat.shininess = shininess;
-				mesh[objId].mat.texCount = texcount;
-				createCube();
-			}
-			else {
-				memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
-				memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
-				memcpy(mesh[objId].mat.specular, spec1, 4 * sizeof(float));
-				memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
-				mesh[objId].mat.shininess = shininess;
-				mesh[objId].mat.texCount = texcount;
-				createCube();
-			}
-			objId++;
-		}
-	}*/
+
 
 	objId = 0;
 	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
@@ -1134,6 +1076,7 @@ int main(int argc, char **argv) {
 
 	glutTimerFunc(0, timer, 0);
 	glutTimerFunc(0, move, 0);
+	glutTimerFunc(0, colision, 0);
 	glutTimerFunc(0, movementOrange, 0);
 	glutIdleFunc(renderScene);  // Use it for maximum performance
 	//glutTimerFunc(0, refresh, 0);    //use it to to get 60 FPS whatever
