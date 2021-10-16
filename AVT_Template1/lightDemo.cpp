@@ -52,6 +52,10 @@ float orange3Z = (rand() % 100) - 45;
 float orange4Z = (rand() % 100) - 45;
 float orangeSpeed = 0;
 
+float torusX[192];
+float torusZ[192];
+int renderedFlag = 0;
+
 unsigned int FrameCount = 0;
 
 VSShaderLib shader;
@@ -109,6 +113,19 @@ float spotAngle = 10.0f;
 float lightPos7[4] = {cylinderX,cylinderY,cylinderZ,1.0f};
 float lightDir[4] = { 0.0f,0.0f,1.0f,1.0f };
 
+float* createPathX() {
+	float caminhoX[192];
+	for (int i = 0; i < 192; i++) {
+		if (i < 96) {
+			caminhoX[i] = 1.0;
+		}
+		else {
+			caminhoX[i] = 9.0;
+		}
+	}
+	return caminhoX;
+}
+
 void timer(int value)
 {
 	std::ostringstream oss;
@@ -126,38 +143,47 @@ void colision(int value) {
 	if (cylinderX > orangeX - 1 && cylinderX < orangeX + 1 && cylinderZ > orangeZ - 1 && cylinderZ < orangeZ + 1) {
 		cylinderX = 5;
 		cylinderZ = -48;
+		incremento = 0;
 	}
-	if (cylinderX > orangeX - 1 && cylinderX < orangeX + 1 && cylinderZ > orange2Z - 1 && cylinderZ < orange2Z + 1) {
+	else if (cylinderX > orangeX - 1 && cylinderX < orangeX + 1 && cylinderZ > orange2Z - 1 && cylinderZ < orange2Z + 1) {
 		cylinderX = 5;
 		cylinderZ = -48;
+		incremento = 0;
 	}
-	if (cylinderX > orangeX - 1 && cylinderX < orangeX + 1 && cylinderZ > orange3Z - 1 && cylinderZ < orange3Z + 1) {
+	else if (cylinderX > orangeX - 1 && cylinderX < orangeX + 1 && cylinderZ > orange3Z - 1 && cylinderZ < orange3Z + 1) {
 		cylinderX = 5;
 		cylinderZ = -48;
+		incremento = 0;
 	}
-	if (cylinderX > orangeX - 1 && cylinderX < orangeX + 1 && cylinderZ > orange4Z - 1 && cylinderZ < orange4Z + 1) {
+	else if (cylinderX > orangeX - 1 && cylinderX < orangeX + 1 && cylinderZ > orange4Z - 1 && cylinderZ < orange4Z + 1) {
 		cylinderX = 5;
 		cylinderZ = -48;
+		incremento = 0;
+	}
+	for (int i = 0; i < 192; i++) {
+		if (cylinderX < torusX[i] + 1.0 && cylinderX > torusX[i]-1.0 && cylinderZ > torusZ[i] - 1.0 && cylinderZ < torusZ[i] + 1.0) {
+			if (cylinderX <= torusX[i]) {
+				torusX[i] += 0.001;
+				if (cylinderZ <= torusZ[i]) {
+					torusZ[i] += 0.001;
+				}
+				else {
+					torusZ[i] -= 0.001;
+				}
+			}
+			else {
+				torusX[i] -= 0.001;
+				if (cylinderZ <= torusZ[i]) {
+					torusZ[i] += 0.001;
+				}
+				else {
+					torusZ[i] -= 0.001;
+				}
+			}
+			incremento = 0;
+		}
 	}
 
-	if (cylinderX < 2.0 && cylinderX > 0 && cylinderZ > -46.5 && cylinderZ < 49.0) {
-		if (cylinderX >= 1.0) {
-			cylinderX = 2;
-		}
-		else {
-			cylinderX = 0;
-		}
-		incremento = 0;
-	}
-	if (cylinderX > 8.0 && cylinderX < 10.0 && cylinderZ > -46.5 && cylinderZ < 49.0) {
-		if (cylinderX >= 9) {
-			cylinderX = 10;
-		}
-		else {
-			cylinderX = 8;
-		}
-		incremento = 0;
-	}
 	glutTimerFunc(1, colision, 0);
 }
 
@@ -256,7 +282,7 @@ void changeSize(int w, int h) {
 //
 
 void renderScene(void) {
-
+	
 	GLint loc;
 
 	FrameCount++;
@@ -722,7 +748,11 @@ void renderScene(void) {
 		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
 		glUniform1f(loc, mesh[objId].mat.shininess);
 		pushMatrix(MODEL);
-		translate(MODEL, 1.0f, 1.15f, 1.5f + i);
+		if (renderedFlag == 0) {
+			torusX[i + 48] = 1.0f;
+			torusZ[i + 48] = 1.5f + i;
+		}
+		translate(MODEL, torusX[i + 48], 1.15f, torusZ[i + 48]);
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);
 		glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
@@ -756,7 +786,12 @@ void renderScene(void) {
 		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
 		glUniform1f(loc, mesh[objId].mat.shininess);
 		pushMatrix(MODEL);
-		translate(MODEL, 9.0f, 1.15f, 1.5f + i);
+		if (renderedFlag == 0) {
+			torusX[i + 48 + 96] = 9.0f;
+			torusZ[i + 48 + 96] = 1.5f + i;
+		}
+		
+		translate(MODEL, torusX[i + 48 + 96], 1.15f, torusZ[i + 48 + 96]);
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);
 		glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
@@ -777,6 +812,7 @@ void renderScene(void) {
 		popMatrix(MODEL);
 		objId++;
 	}
+	renderedFlag = 1;
 
 	glutSwapBuffers();
 }
@@ -977,9 +1013,9 @@ void init()
 
 
 	objId = 0;
-	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.ambient, amb2, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff2, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec2, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
