@@ -124,15 +124,50 @@ void timer(int value)
 }
 
 void colision(int value) {
-	if (cylinderX < 2.0 && cylinderX > 0 && cylinderZ > -46.5 && cylinderZ < 46.5) {
-		cylinderX = 2;
+
+	if (cylinderX > orangeX - 1 && cylinderX < orangeX + 1 && cylinderZ > orangeZ - 1 && cylinderZ < orangeZ + 1) {
+		cylinderX = 5;
+		cylinderZ = -48;
+	}
+	if (cylinderX > orangeX - 1 && cylinderX < orangeX + 1 && cylinderZ > orange2Z - 1 && cylinderZ < orange2Z + 1) {
+		cylinderX = 5;
+		cylinderZ = -48;
+	}
+	if (cylinderX > orangeX - 1 && cylinderX < orangeX + 1 && cylinderZ > orange3Z - 1 && cylinderZ < orange3Z + 1) {
+		cylinderX = 5;
+		cylinderZ = -48;
+	}
+	if (cylinderX > orangeX - 1 && cylinderX < orangeX + 1 && cylinderZ > orange4Z - 1 && cylinderZ < orange4Z + 1) {
+		cylinderX = 5;
+		cylinderZ = -48;
+	}
+
+	if (cylinderX < 2.0 && cylinderX > 0 && cylinderZ > -46.5 && cylinderZ < 49.0) {
+		if (cylinderX >= 1.0) {
+			cylinderX = 2;
+		}
+		else {
+			cylinderX = 0;
+		}
 		incremento = 0;
 	}
-	if (cylinderX > 8.0 && cylinderX < 10.0 && cylinderZ > -46.5 && cylinderZ < 46.5) {
-		cylinderX = 8;
+	if (cylinderX > 8.0 && cylinderX < 10.0 && cylinderZ > -46.5 && cylinderZ < 49.0) {
+		if (cylinderX >= 9) {
+			cylinderX = 10;
+		}
+		else {
+			cylinderX = 8;
+		}
 		incremento = 0;
 	}
 	glutTimerFunc(1, colision, 0);
+}
+
+bool ballColision(float x, float z) { //esta funcao por alguma razao nao funciona no callback
+	if (cylinderX > x - 1 && cylinderX < x + 1 && cylinderZ > z - 1 && cylinderZ > z + 1) {
+		return true;
+	}
+	return false;
 }
 
 
