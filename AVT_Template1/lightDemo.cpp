@@ -1217,6 +1217,9 @@ void renderScene(void) {
 		objId++;
 	}
 
+	//Transparency
+	glEnable(GL_BLEND);
+	
 	//VIDRO
 	objId = 681;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
@@ -1254,6 +1257,8 @@ void renderScene(void) {
 	glBindVertexArray(0);
 
 	popMatrix(MODEL);
+
+	glDisable(GL_BLEND);
 
 	renderedFlag = 1;
 
@@ -1714,7 +1719,6 @@ void init()
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glEnable(GL_BLEND);
 
 }
 
