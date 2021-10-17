@@ -614,6 +614,7 @@ void renderScene(void) {
 
 	popMatrix(MODEL);
 
+	//LARANJAS
 	objId = 6;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
@@ -648,7 +649,6 @@ void renderScene(void) {
 
 	popMatrix(MODEL);
 
-	//LARANJAS
 	objId = 7;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
@@ -1217,6 +1217,44 @@ void renderScene(void) {
 		objId++;
 	}
 
+	//VIDRO
+	objId = 681;
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	translate(MODEL, cylinderX, cylinderY, cylinderZ);
+	rotate(MODEL, angulo, 0, 1.0f, 0);
+	translate(MODEL, -0.5f, 0.25f, 0.5f);
+	//rotate(MODEL, -90, 1.0f, 0, 0);
+	//rotate(MODEL, -90, 0, 0, 1.0f);
+	scale(MODEL, 1.0f, 1.0f, 0.1f);
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
+
 	renderedFlag = 1;
 
 	glutSwapBuffers();
@@ -1400,28 +1438,41 @@ void init()
 
 
 	
-	float amb[]= {0.2f, 0.15f, 0.1f, 1.0f};
-	float diff[] = {0.8f, 0.6f, 0.4f, 1.0f};
-	float spec[] = {0.8f, 0.8f, 0.8f, 1.0f};
-	float emissive[] = {0.0f, 0.0f, 0.0f, 1.0f};
-	float shininess= 100.0f;
+	//Cream
+	float amb[] = { 0.2f, 0.15f, 0.1f, 1.0f };
+	float diff[] = { 0.8f, 0.6f, 0.4f, 1.0f };
+	float spec[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+	float emissive[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	float shininess = 100.0f;
 	int texcount = 0;
 
+	//Red
 	float amb1[] = { 0.3f, 0.0f, 0.0f, 1.0f };
 	float diff1[] = { 0.8f, 0.1f, 0.1f, 1.0f };
 	float spec1[] = { 0.9f, 0.9f, 0.9f, 1.0f };
 	shininess = 500.0;
 
-	float amb2[] = { 1.0f, 0.0f, 0.2f, 1.0f };
+	//Orange
+	float amb2[] = { 0.7f, 0.3f, 0.0f, 1.0f };
 	float diff2[] = { 1.0f, 0.0f, 0.0f, 1.0f };
 	float spec2[] = { 0.9f, 0.9f, 0.9f, 1.0f };
+
+	//Yellow
+	float amb3[] = { 0.8f, 0.8f, 0.0f, 1.0f };
+	float diff3[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+	float spec3[] = { 0.9f, 0.9f, 0.9f, 1.0f };
+
+	//Transparent Blue
+	float amb4[] = { 0.3f, 0.0f, 1.0f, 0.5f };
+	float diff4[] = { 0.8f, 0.6f, 0.4f, 1.0f };
+	float spec4[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 
 	//MESA
 	objId = 0;
-	memcpy(mesh[objId].mat.ambient, amb2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec2, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
@@ -1513,42 +1564,42 @@ void init()
 
 	//MANTEIGAS
 	objId = 10;
-	memcpy(mesh[objId].mat.ambient, amb2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec2, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.ambient, amb3, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff3, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec3, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
 	createCube();
 
 	objId = 11;
-	memcpy(mesh[objId].mat.ambient, amb2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec2, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.ambient, amb3, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff3, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec3, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
 	createCube();
 
 	objId = 12;
-	memcpy(mesh[objId].mat.ambient, amb2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec2, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.ambient, amb3, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff3, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec3, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
 	createCube();
 
 	objId = 13;
-	memcpy(mesh[objId].mat.ambient, amb2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec2, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.ambient, amb3, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff3, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec3, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
 	createCube();
 
-
+	//Cheerios
 	objId = 14;
 	for (int i = -50; i < 48; ++i) {
 		memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
@@ -1645,12 +1696,25 @@ void init()
 		objId++;
 	}
 
+	//VIDRO
+	objId = 681;
+	memcpy(mesh[objId].mat.ambient, amb4, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff4, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec4, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
+	mesh[objId].mat.shininess = shininess;
+	mesh[objId].mat.texCount = texcount;
+	createCube();
+
 
 	// some GL settings
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_MULTISAMPLE);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
 
 }
 

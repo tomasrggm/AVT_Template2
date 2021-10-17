@@ -74,5 +74,5 @@ void main() {
 	vec3 fogColor = vec3(0.5,0.6,0.7); //define fog color
 
 	colorOut = max(accumulatedValue , mat.ambient * luzAmbiente);
-	colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
+	//colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
 }
