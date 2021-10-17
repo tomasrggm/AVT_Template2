@@ -52,8 +52,8 @@ float orange3Z = (rand() % 100) - 45;
 float orange4Z = (rand() % 100) - 45;
 float orangeSpeed = 0;
 
-float torusX[632];
-float torusZ[632];
+float torusX[633];
+float torusZ[633];
 int renderedFlag = 0;
 
 unsigned int FrameCount = 0;
@@ -149,7 +149,7 @@ void colision(int value) {
 		cylinderZ = -48;
 		incremento = 0;
 	}
-	for (int i = 0; i < 632; i++) {
+	for (int i = 0; i < 633; i++) {
 		if (cylinderX < torusX[i] + 1.0 && cylinderX > torusX[i]-1.0 && cylinderZ > torusZ[i] - 1.0 && cylinderZ < torusZ[i] + 1.0 && i < 628) {
 			if (cylinderX <= torusX[i]) {
 				torusX[i] += 0.001;
