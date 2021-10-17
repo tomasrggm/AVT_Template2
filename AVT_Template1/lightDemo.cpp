@@ -39,9 +39,11 @@ int lightFlag = 1; //ambiente
 int lightFlag2 = 1; //tudo o resto
 int lightFlag3 = 1; //holofotes
 int cameraFlag = 1;
-float cylinderX = 5;
-float cylinderY = 1.5;
-float cylinderZ = -48;
+float cylinderX = 5.0f;
+float cylinderY = 1.5f;
+float cylinderZ = -48.0f;
+float cylinderXbackup = 5.0f;
+float cylinderZbackup = -48.0f;
 int angulo = 0;
 float incremento = 0; //acelaracao do carro
 int orangeRot = 0;
@@ -150,27 +152,29 @@ void colision(int value) {
 		incremento = 0;
 	}
 	for (int i = 0; i < 633; i++) {
-		if (cylinderX < torusX[i] + 1.0 && cylinderX > torusX[i]-1.0 && cylinderZ > torusZ[i] - 1.0 && cylinderZ < torusZ[i] + 1.0 && i < 628) {
+		if (cylinderX < torusX[i] + 0.7f && cylinderX > torusX[i]-0.7f && cylinderZ > torusZ[i] - 0.7f && cylinderZ < torusZ[i] + 0.7f && i < 628) {
 			if (cylinderX <= torusX[i]) {
-				torusX[i] += 0.001;
+				torusX[i] += 0.01;
 				if (cylinderZ <= torusZ[i]) {
-					torusZ[i] += 0.001;
+					torusZ[i] += 0.01;
 				}
 				else {
-					torusZ[i] -= 0.001;
+					torusZ[i] -= 0.01;
 				}
 			}
 			else {
-				torusX[i] -= 0.001;
+				torusX[i] -= 0.01;
 				if (cylinderZ <= torusZ[i]) {
-					torusZ[i] += 0.001;
+					torusZ[i] += 0.01;
 				}
 				else {
-					torusZ[i] -= 0.001;
+					torusZ[i] -= 0.01;
 				}
 			}
 			incremento = 0;
-		} else if (cylinderX < torusX[i] + 4.0f && cylinderX > torusX[i] && cylinderZ > torusZ[i] && cylinderZ < torusZ[i] + 2.0f && i >= 628) {
+			cylinderX = cylinderXbackup;
+			cylinderZ = cylinderZbackup;
+		} else if (cylinderX < torusX[i] + 4.7f && cylinderX > torusX[i] -0.7f && cylinderZ > torusZ[i] -0.7f && cylinderZ < torusZ[i] + 1.7f && i >= 628) {
 			if (cylinderX <= torusX[i]+2.0f) {
 				torusX[i] += 0.01;
 				if (cylinderZ <= torusZ[i]+1.0f) {
@@ -190,18 +194,19 @@ void colision(int value) {
 				}
 			}
 			incremento = 0;
+			cylinderX = cylinderXbackup;
+			cylinderZ = cylinderZbackup;
+		}
+		else {
+			cylinderXbackup = cylinderX;
+			cylinderZbackup = cylinderZ;
 		}
 	}
 
 	glutTimerFunc(1, colision, 0);
 }
 
-bool ballColision(float x, float z) { //esta funcao por alguma razao nao funciona no callback
-	if (cylinderX > x - 1 && cylinderX < x + 1 && cylinderZ > z - 1 && cylinderZ > z + 1) {
-		return true;
-	}
-	return false;
-}
+
 
 
 void move(int value)
