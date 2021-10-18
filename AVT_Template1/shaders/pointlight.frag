@@ -16,6 +16,11 @@ vec4 l_spotDir = vec4(0.0,0.0,-1.0,1.0);
 int depthFog = 1;
 float dist = 0.0f;
 
+uniform sampler2D texmap;
+uniform sampler2D texmap1;
+uniform sampler2D texmap2;
+uniform int texMode;
+
 uniform vec4 luzAmbiente;
 uniform vec4 luzDifusa;
 uniform vec4 luzHolofote;
@@ -25,6 +30,7 @@ in Data {
 	vec3 normal;
 	vec3 eye;
 	vec3 lightDir;
+	vec2 tex_coord;
 } DataIn[8];
 
 in vec4 position;
@@ -33,6 +39,7 @@ in float visibility;
 void main() {
 	vec4 spec = vec4(0.0);
 	vec4 accumulatedValue = vec4(0.0);
+	vec4 texel, texel1;
 
 	for(int i = 0; i < 8; ++i) {
 		if(i < 6) {
@@ -48,7 +55,13 @@ void main() {
 				vec3 h = normalize(l + e);
 				float intSpec = max(dot(h,n), 0.0);
 				spec = mat.specular * pow(intSpec, mat.shininess);
-				accumulatedValue +=(spec + intensity*mat.diffuse)* luzDifusa;
+				if(texMode == 0){
+					texel = texture(texmap2, DataIn[i].tex_coord);
+					accumulatedValue +=(spec + intensity*mat.diffuse*texel)* luzDifusa;
+				}else{
+					accumulatedValue +=(spec + intensity*mat.diffuse)* luzDifusa;
+				}
+				
 			}
 		}
 		else {
@@ -64,7 +77,13 @@ void main() {
 					vec3 h = normalize(ld + eye);
 					float intSpec = max(dot(h,n), 0.0);
 					spec = mat.specular * pow(intSpec, mat.shininess);
-					accumulatedValue += (spec + intensity*mat.diffuse) * luzHolofote;
+					if(texMode == 0){
+						texel = texture(texmap2, DataIn[i].tex_coord);
+						accumulatedValue += (spec + intensity*mat.diffuse*texel) * luzHolofote;
+					}else{
+						accumulatedValue += (spec + intensity*mat.diffuse) * luzHolofote;
+					}
+					
 				}
 			}
 		}
@@ -74,5 +93,6 @@ void main() {
 	vec3 fogColor = vec3(0.5,0.6,0.7); //define fog color
 
 	colorOut = max(accumulatedValue , mat.ambient * luzAmbiente);
+
 	colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
 }

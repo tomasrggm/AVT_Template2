@@ -23,11 +23,14 @@
 // GLUT is the toolkit to interface with the OS
 #include <GL/freeglut.h>
 
+#include <IL/il.h>
+
 // Use Very Simple Libs
 #include "VSShaderlib.h"
 #include "AVTmathLib.h"
 #include "VertexAttrDef.h"
 #include "basic_geometry.h"
+#include "Texture_Loader.h"
 
 #define CAPTION "AVT Per Fragment Phong Lightning Demo"
 int WindowHandle = 0;
@@ -91,6 +94,11 @@ GLint lPos_uniformId7;
 GLint lDir_uniformId;
 GLint lAngle_uniformId;
 GLint lPos_uniformId8;
+
+GLint tex_loc, tex_loc1, tex_loc2;
+GLint texMode_uniformId;
+
+GLuint TextureArray[3];
 	
 // Camera Position
 float camX, camY, camZ;
@@ -397,6 +405,20 @@ void renderScene(void) {
 		multMatrixPoint(VIEW, res9, res10);
 		glUniform4fv(lPos_uniformId8, 1, res10);
 
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
+
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
+
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
+
+		glUniform1i(tex_loc, 0);
+		glUniform1i(tex_loc1, 1);
+		glUniform1i(tex_loc2, 2);
+
 	//MESA
 	objId = 0;
 	// send the material
@@ -421,6 +443,7 @@ void renderScene(void) {
 	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
 
 	// Render mesh
+	glUniform1i(texMode_uniformId, 0); // linha da textura
 	glBindVertexArray(mesh[objId].vao);
 
 	if (!shader.isProgramValid()) {
@@ -1363,10 +1386,11 @@ GLuint setupShaders() {
 	glBindFragDataLocation(shader.getProgramIndex(), 0,"colorOut");
 	glBindAttribLocation(shader.getProgramIndex(), VERTEX_COORD_ATTRIB, "position");
 	glBindAttribLocation(shader.getProgramIndex(), NORMAL_ATTRIB, "normal");
-	//glBindAttribLocation(shader.getProgramIndex(), TEXTURE_COORD_ATTRIB, "texCoord");
+	glBindAttribLocation(shader.getProgramIndex(), TEXTURE_COORD_ATTRIB, "texCoord");
 
 	glLinkProgram(shader.getProgramIndex());
 
+	texMode_uniformId = glGetUniformLocation(shader.getProgramIndex(), "texMode");
 	pvm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_pvm");
 	vm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_viewModel");
 	normal_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_normal");
@@ -1379,6 +1403,9 @@ GLuint setupShaders() {
 	lStr_uniformId = glGetUniformLocation(shader.getProgramIndex(), "luzAmbiente");
 	lStr_uniformId2 = glGetUniformLocation(shader.getProgramIndex(), "luzDifusa");
 	lStr_uniformId3 = glGetUniformLocation(shader.getProgramIndex(), "luzHolofote");
+	tex_loc = glGetUniformLocation(shader.getProgramIndex(), "texmap");
+	tex_loc1 = glGetUniformLocation(shader.getProgramIndex(), "texmap1");
+	tex_loc2 = glGetUniformLocation(shader.getProgramIndex(), "texmap2");
 
 	
 	printf("InfoLog for Per Fragment Phong Lightning Shader\n%s\n\n", shader.getAllInfoLogs().c_str());
@@ -1398,6 +1425,18 @@ void init()
 	camZ = r * cos(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
 	camY = r *   						     sin(beta * 3.14f / 180.0f);
 
+	if (ilGetInteger(IL_VERSION_NUM) < IL_VERSION)
+	{
+		printf("wrong DevIL version \n");
+		exit(0);
+	}
+	ilInit();
+
+
+	glGenTextures(3, TextureArray);
+	Texture2D_Loader(TextureArray, "stone.tga", 0);
+	Texture2D_Loader(TextureArray, "checker.png", 1);
+	Texture2D_Loader(TextureArray, "lightwood.tga", 2);
 
 	
 	float amb[]= {0.2f, 0.15f, 0.1f, 1.0f};

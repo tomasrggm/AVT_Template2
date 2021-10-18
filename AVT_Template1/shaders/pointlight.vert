@@ -12,9 +12,11 @@ out Data {
 	vec3 normal;
 	vec3 eye;
 	vec3 lightDir;
+	vec2 tex_coord;
 } DataOut[8];
 
 in vec4 position;
+in vec4 texCoord;
 out float visibility;
 
 const float density = 0.055;
@@ -26,6 +28,7 @@ void main () {
 		DataOut[i].normal = normalize(m_normal * normal.xyz);
 		DataOut[i].lightDir = vec3(l_pos[i] - pos);
 		DataOut[i].eye = vec3(-pos);
+		DataOut[i].tex_coord = texCoord.st;
 	}
 
 	float distance = length(pos); //range based
