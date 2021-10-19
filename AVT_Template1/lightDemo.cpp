@@ -1219,6 +1219,7 @@ void renderScene(void) {
 
 	//Transparency
 	glEnable(GL_BLEND);
+	glDepthMask(GL_FALSE);
 	
 	//VIDRO
 	objId = 681;
@@ -1259,6 +1260,7 @@ void renderScene(void) {
 	popMatrix(MODEL);
 
 	glDisable(GL_BLEND);
+	glDepthMask(GL_TRUE);
 
 	renderedFlag = 1;
 
@@ -1468,8 +1470,8 @@ void init()
 	float spec3[] = { 0.9f, 0.9f, 0.9f, 1.0f };
 
 	//Transparent Blue
-	float amb4[] = { 0.3f, 0.0f, 1.0f, 0.5f };
-	float diff4[] = { 0.8f, 0.6f, 0.4f, 1.0f };
+	float amb4[] = { 0.3f, 0.0f, 1.0f, 1.0f };
+	float diff4[] = { 0.8f, 0.6f, 0.4f, 0.5f };
 	float spec4[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 
