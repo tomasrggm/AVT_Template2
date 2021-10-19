@@ -454,7 +454,7 @@ void renderScene(void) {
 	glBindVertexArray(0);
 
 	popMatrix(MODEL);
-
+	glUniform1i(texMode_uniformId, 1);
 	//CARRO
 	objId = 1;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
@@ -1286,7 +1286,7 @@ void renderScene(void) {
 	glDepthMask(GL_TRUE);
 
 	renderedFlag = 1;
-
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glutSwapBuffers();
 }
 
