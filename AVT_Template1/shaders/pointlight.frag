@@ -13,8 +13,8 @@ struct Materials {
 
 float l_spotCutOff = 0.720f;
 vec4 l_spotDir = vec4(0.0,0.0,-1.0,1.0);
-int depthFog = 1;
-float dist = 0.0f;
+
+const float density = 0.05;
 
 uniform sampler2D texmap;
 uniform sampler2D texmap1;
@@ -33,8 +33,7 @@ in Data {
 	vec2 tex_coord;
 } DataIn[8];
 
-in vec4 position;
-in float visibility;
+in vec4 pos;
 
 void main() {
 	vec4 spec = vec4(0.0);
@@ -92,7 +91,13 @@ void main() {
 
 	vec3 fogColor = vec3(0.5,0.6,0.7); //define fog color
 
-	colorOut = max(accumulatedValue , mat.ambient * luzAmbiente);
+	float distance = length(pos); //range based
+	//float distance = abs(pos.z); //plane based
 
+	float visibility = exp(-distance*density);
+	//visibility = clamp(visibility, 0.0, 1.0);
+
+	colorOut = max(accumulatedValue , mat.ambient * luzAmbiente);
+	colorOut[3] = mat.diffuse.a; 
 	colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
 }
