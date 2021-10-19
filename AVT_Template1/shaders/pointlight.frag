@@ -14,9 +14,8 @@ struct Materials {
 float l_spotCutOff = 0.720f;
 vec4 l_spotDir = vec4(0.0,0.0,-1.0,1.0);
 
-const float density = 0.05;
+float density = 0.05;
 
-uniform sampler2D texmap;
 uniform sampler2D texmap1;
 uniform sampler2D texmap2;
 uniform int texMode;
@@ -38,7 +37,8 @@ in vec4 pos;
 void main() {
 	vec4 spec = vec4(0.0);
 	vec4 accumulatedValue = vec4(0.0);
-	vec4 texel, texel1;
+	vec4 texel = vec4(0.0);
+	vec4 texel1 = vec4(0.0);
 
 	for(int i = 0; i < 8; ++i) {
 		if(i < 6) {
@@ -54,10 +54,12 @@ void main() {
 				vec3 h = normalize(l + e);
 				float intSpec = max(dot(h,n), 0.0);
 				spec = mat.specular * pow(intSpec, mat.shininess);
-				if(texMode == 0){
+				if(texMode == 0) {
 					texel = texture(texmap2, DataIn[i].tex_coord);
-					accumulatedValue +=(spec + intensity*mat.diffuse*texel)* luzDifusa;
-				}else{
+					texel1 = texture(texmap1, DataIn[i].tex_coord);
+					accumulatedValue +=(spec + intensity*mat.diffuse*texel*texel1)* luzDifusa;
+				}
+				else {
 					accumulatedValue +=(spec + intensity*mat.diffuse)* luzDifusa;
 				}
 				
@@ -76,10 +78,12 @@ void main() {
 					vec3 h = normalize(ld + eye);
 					float intSpec = max(dot(h,n), 0.0);
 					spec = mat.specular * pow(intSpec, mat.shininess);
-					if(texMode == 0){
+					if(texMode == 0) {
 						texel = texture(texmap2, DataIn[i].tex_coord);
-						accumulatedValue += (spec + intensity*mat.diffuse*texel) * luzHolofote;
-					}else{
+						texel1 = texture(texmap1, DataIn[i].tex_coord);
+						accumulatedValue += (spec + intensity*mat.diffuse*texel*texel1) * luzHolofote;
+					}
+					else {
 						accumulatedValue += (spec + intensity*mat.diffuse) * luzHolofote;
 					}
 					
@@ -97,7 +101,14 @@ void main() {
 	float visibility = exp(-distance*density);
 	//visibility = clamp(visibility, 0.0, 1.0);
 
-	colorOut = max(accumulatedValue , mat.ambient * luzAmbiente);
+	if(texMode == 0) {
+		colorOut = max(accumulatedValue , mat.ambient * luzAmbiente * texel * texel1);
+	}
+
+	else {
+		colorOut = max(accumulatedValue , mat.ambient * luzAmbiente);
+	}
+
 	colorOut[3] = mat.diffuse.a; 
 	colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
 }

@@ -22,7 +22,7 @@ out vec4 pos;
 void main () {
 
 	pos = m_viewModel * position;
-	for(int i = 0; i < 8; ++i){
+	for(int i = 0; i < 8; ++i) {
 		DataOut[i].normal = normalize(m_normal * normal.xyz);
 		DataOut[i].lightDir = vec3(l_pos[i] - pos);
 		DataOut[i].eye = vec3(-pos);

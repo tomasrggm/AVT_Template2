@@ -50,12 +50,10 @@ float cylinderZbackup = -48.0f;
 int angulo = 0;
 float incremento = 0; //acelaracao do carro
 int orangeRot = 0;
-float orangeX = 0;
-float orangeZ = (rand() % 100) - 45;
-float orange2Z = (rand() % 100) - 45;
-float orange3Z = (rand() % 100) - 45;
-float orange4Z = (rand() % 100) - 45;
-float orangeSpeed = 0;
+float orangeX[4] = { 0,0,0,0 };
+float orangeZ[4] = { (rand() % 100) - 45, (rand() % 100) - 45, (rand() % 100) - 45, (rand() % 100) - 45 };
+float orangeSpeed[4] = { 0, 0, 0, 0 };
+float colisionBounce = 0.05f;
 
 float torusX[633];
 float torusZ[633];
@@ -139,44 +137,32 @@ void timer(int value)
 
 void colision(int value) {
 
-	if (cylinderX > orangeX - 1 && cylinderX < orangeX + 1 && cylinderZ > orangeZ - 1 && cylinderZ < orangeZ + 1) {
-		cylinderX = 5;
-		cylinderZ = -48;
-		incremento = 0;
+	for (int i = 0; i < 4; i++) {
+		if (cylinderX > orangeX[i] - 1 && cylinderX < orangeX[i] + 1 && cylinderZ > orangeZ[i] - 1 && cylinderZ < orangeZ[i] + 1) {
+			cylinderX = 5;
+			cylinderZ = -48;
+			incremento = 0;
+		}
 	}
-	else if (cylinderX > orangeX - 1 && cylinderX < orangeX + 1 && cylinderZ > orange2Z - 1 && cylinderZ < orange2Z + 1) {
-		cylinderX = 5;
-		cylinderZ = -48;
-		incremento = 0;
-	}
-	else if (cylinderX > orangeX - 1 && cylinderX < orangeX + 1 && cylinderZ > orange3Z - 1 && cylinderZ < orange3Z + 1) {
-		cylinderX = 5;
-		cylinderZ = -48;
-		incremento = 0;
-	}
-	else if (cylinderX > orangeX - 1 && cylinderX < orangeX + 1 && cylinderZ > orange4Z - 1 && cylinderZ < orange4Z + 1) {
-		cylinderX = 5;
-		cylinderZ = -48;
-		incremento = 0;
-	}
+
 	for (int i = 0; i < 633; i++) {
 		if (cylinderX < torusX[i] + 0.7f && cylinderX > torusX[i]-0.7f && cylinderZ > torusZ[i] - 0.7f && cylinderZ < torusZ[i] + 0.7f && i < 628) {
 			if (cylinderX <= torusX[i]) {
-				torusX[i] += 0.01;
+				torusX[i] += colisionBounce;
 				if (cylinderZ <= torusZ[i]) {
-					torusZ[i] += 0.01;
+					torusZ[i] += colisionBounce;
 				}
 				else {
-					torusZ[i] -= 0.01;
+					torusZ[i] -= colisionBounce;
 				}
 			}
 			else {
-				torusX[i] -= 0.01;
+				torusX[i] -= colisionBounce;
 				if (cylinderZ <= torusZ[i]) {
-					torusZ[i] += 0.01;
+					torusZ[i] += colisionBounce;
 				}
 				else {
-					torusZ[i] -= 0.01;
+					torusZ[i] -= colisionBounce;
 				}
 			}
 			incremento = 0;
@@ -184,21 +170,21 @@ void colision(int value) {
 			cylinderZ = cylinderZbackup;
 		} else if (cylinderX < torusX[i] + 4.7f && cylinderX > torusX[i] -0.7f && cylinderZ > torusZ[i] -0.7f && cylinderZ < torusZ[i] + 2.7f && i >= 628) {
 			if (cylinderX <= torusX[i]+2.0f) {
-				torusX[i] += 0.01;
+				torusX[i] += colisionBounce;
 				if (cylinderZ <= torusZ[i]+1.0f) {
-					torusZ[i] += 0.01;
+					torusZ[i] += colisionBounce;
 				}
 				else {
-					torusZ[i] -= 0.01;
+					torusZ[i] -= colisionBounce;
 				}
 			}
 			else {
-				torusX[i] -= 0.01;
+				torusX[i] -= colisionBounce;
 				if (cylinderZ <= torusZ[i]+1.0f) {
-					torusZ[i] += 0.01;
+					torusZ[i] += colisionBounce;
 				}
 				else {
-					torusZ[i] -= 0.01;
+					torusZ[i] -= colisionBounce;
 				}
 			}
 			incremento = 0;
@@ -243,18 +229,15 @@ void movementOrange(int value) {
 	if (orangeRot >= 360) {
 		orangeRot = 0;
 	}
-	orangeSpeed += 0.0001f;
-	if (orangeSpeed > 0.04f) {
-		orangeSpeed = 0.04f;
-	}
-	orangeX += orangeSpeed;
-	if (orangeX > 50) {
-		orangeX = -50;
-		orangeZ= (rand() % 100) - 48;
-		orange2Z = (rand() % 100) - 48;
-		orange3Z = (rand() % 100) - 48;
-		orange4Z = (rand() % 100) - 48;
-		orangeSpeed = 0;
+
+	for (int i = 0; i < 4; i++) {
+		orangeSpeed[i] += 0.00005f * (i + 1);
+
+		orangeX[i] += orangeSpeed[i];
+		if (orangeX[i] > 50) {
+			orangeX[i] = -50;
+			orangeZ[i] = (rand() % 100) - 48;
+		}
 	}
 	glutTimerFunc(1, movementOrange, 0);
 }
@@ -638,141 +621,41 @@ void renderScene(void) {
 	popMatrix(MODEL);
 
 	//LARANJAS
-	objId = 6;
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-	glUniform4fv(loc, 1, mesh[objId].mat.specular);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
-	pushMatrix(MODEL);
+	for (int i = 0; i < 4; i++) {
+		objId++;
+		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+		glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+		glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+		glUniform4fv(loc, 1, mesh[objId].mat.specular);
+		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+		glUniform1f(loc, mesh[objId].mat.shininess);
+		pushMatrix(MODEL);
 
 
-	rotate(MODEL,orangeRot, 0, 1.0f, 0);
-	translate(MODEL, orangeX, 2.0f, orangeZ);
+		rotate(MODEL, orangeRot, 0, 1.0f, 0);
+		translate(MODEL, orangeX[i], 2.0f, orangeZ[i]);
 
-	// send matrices to OGL
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-	computeNormalMatrix3x3();
-	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+		// send matrices to OGL
+		computeDerivedMatrix(PROJ_VIEW_MODEL);
+		glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+		glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+		computeNormalMatrix3x3();
+		glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
 
-	// Render mesh
-	glBindVertexArray(mesh[objId].vao);
+		// Render mesh
+		glBindVertexArray(mesh[objId].vao);
 
-	if (!shader.isProgramValid()) {
-		printf("Program Not Valid!\n");
-		exit(1);
+		if (!shader.isProgramValid()) {
+			printf("Program Not Valid!\n");
+			exit(1);
+		}
+		glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		popMatrix(MODEL);
 	}
-	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
-	popMatrix(MODEL);
-
-	objId = 7;
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-	glUniform4fv(loc, 1, mesh[objId].mat.specular);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
-	pushMatrix(MODEL);
-
-
-	rotate(MODEL, orangeRot, 0, 1.0f, 0);
-	translate(MODEL, orangeX, 2.0f, orange2Z);
-
-	// send matrices to OGL
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-	computeNormalMatrix3x3();
-	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-	// Render mesh
-	glBindVertexArray(mesh[objId].vao);
-
-	if (!shader.isProgramValid()) {
-		printf("Program Not Valid!\n");
-		exit(1);
-	}
-	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
-	popMatrix(MODEL);
-
-	objId = 8;
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-	glUniform4fv(loc, 1, mesh[objId].mat.specular);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
-	pushMatrix(MODEL);
-
-
-	rotate(MODEL, orangeRot, 0, 1.0f, 0);
-	translate(MODEL, orangeX, 2.0f, orange3Z);
-
-	// send matrices to OGL
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-	computeNormalMatrix3x3();
-	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-	// Render mesh
-	glBindVertexArray(mesh[objId].vao);
-
-	if (!shader.isProgramValid()) {
-		printf("Program Not Valid!\n");
-		exit(1);
-	}
-	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
-	popMatrix(MODEL);
-
-	objId = 9;
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-	glUniform4fv(loc, 1, mesh[objId].mat.specular);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
-	pushMatrix(MODEL);
-
-
-	rotate(MODEL, orangeRot, 0, 1.0f, 0);
-	translate(MODEL, orangeX, 2.0f, orange4Z);
-
-	// send matrices to OGL
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-	computeNormalMatrix3x3();
-	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-	// Render mesh
-	glBindVertexArray(mesh[objId].vao);
-
-	if (!shader.isProgramValid()) {
-		printf("Program Not Valid!\n");
-		exit(1);
-	}
-	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
-	popMatrix(MODEL);
 
 	//MANTEIGAS
 	objId = 10;
@@ -1480,7 +1363,7 @@ void init()
 
 	glGenTextures(3, TextureArray);
 	Texture2D_Loader(TextureArray, "stone.tga", 0);
-	Texture2D_Loader(TextureArray, "checker.png", 1);
+	Texture2D_Loader(TextureArray, "table-cloth.png", 1);
 	Texture2D_Loader(TextureArray, "lightwood.tga", 2);
 
 	
