@@ -182,7 +182,7 @@ void colision(int value) {
 			incremento = 0;
 			cylinderX = cylinderXbackup;
 			cylinderZ = cylinderZbackup;
-		} else if (cylinderX < torusX[i] + 4.7f && cylinderX > torusX[i] -0.7f && cylinderZ > torusZ[i] -0.7f && cylinderZ < torusZ[i] + 1.7f && i >= 628) {
+		} else if (cylinderX < torusX[i] + 4.7f && cylinderX > torusX[i] -0.7f && cylinderZ > torusZ[i] -0.7f && cylinderZ < torusZ[i] + 2.7f && i >= 628) {
 			if (cylinderX <= torusX[i]+2.0f) {
 				torusX[i] += 0.01;
 				if (cylinderZ <= torusZ[i]+1.0f) {
@@ -341,7 +341,7 @@ void renderScene(void) {
 
 		
 		if (lightFlag == 1) {
-			float res2[4] = { 1.0,1.0,1.0,1.0 };
+			float res2[4] = { 1.0,1.0,1.0,0.0 }; //para ser direcional
 			glUniform4fv(lStr_uniformId, 1, res2);
 		}
 		else {
