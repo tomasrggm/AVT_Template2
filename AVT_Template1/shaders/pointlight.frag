@@ -20,7 +20,7 @@ uniform sampler2D texmap1;
 uniform sampler2D texmap2;
 uniform int texMode;
 
-uniform vec4 luzAmbiente;
+uniform vec4 luzDirectional;
 uniform vec4 luzDifusa;
 uniform vec4 luzHolofote;
 uniform Materials mat;
@@ -102,13 +102,13 @@ void main() {
 	//visibility = clamp(visibility, 0.0, 1.0);
 
 	if(texMode == 0) {
-		colorOut = max(accumulatedValue , mat.ambient * luzAmbiente * texel * texel1);
+		colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel * texel1);
 	}
 
 	else {
-		colorOut = max(accumulatedValue , mat.ambient * luzAmbiente);
+		colorOut = max(accumulatedValue , mat.ambient * luzDirectional);
 	}
 
 	colorOut[3] = mat.diffuse.a; 
-	//colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
+	colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
 }

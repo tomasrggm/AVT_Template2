@@ -32,23 +32,23 @@
 #include "basic_geometry.h"
 #include "Texture_Loader.h"
 
-#define CAPTION "AVT Per Fragment Phong Lightning Demo"
+#define CAPTION "AVT MicroMachines Project - Delivery 1"
 int WindowHandle = 0;
 int WinX = 640, WinY = 480;
 
 
 //isto fui eu que pus
-int lightFlag = 1; //ambiente
+int lightFlag = 1; //directional
 int lightFlag2 = 1; //tudo o resto
 int lightFlag3 = 1; //holofotes
 int cameraFlag = 1;
-float cylinderX = 5.0f;
-float cylinderY = 1.5f;
-float cylinderZ = -48.0f;
-float cylinderXbackup = 5.0f;
-float cylinderZbackup = -48.0f;
+float carX = 5.0f;
+float carY = 1.5f;
+float carZ = -48.0f;
+float carXbackup = 5.0f;
+float carZbackup = -48.0f;
 int angulo = 0;
-float incremento = 0; //acelaracao do carro
+float accelerationIncrement = 0; //acelaracao do carro
 int orangeRot = 0;
 float orangeX[4] = { 0,0,0,0 };
 float orangeZ[4] = { (rand() % 100) - 45, (rand() % 100) - 45, (rand() % 100) - 45, (rand() % 100) - 45 };
@@ -118,7 +118,7 @@ float lightPos4[4] = { 1.0f, -3.0f, 1.0f, 1.0f };
 float lightPos5[4] = { 10.0f, 6.0f, 10.0f, 1.0f };
 float lightPos6[4] = { 5.0f, 6.0f, 5.0f, 1.0f };
 float spotAngle = 10.0f;
-float lightPos7[4] = {cylinderX,cylinderY,cylinderZ,1.0f};
+float lightPos7[4] = {carX,carY,carZ,1.0f};
 float lightDir[4] = { 0.0f,0.0f,1.0f,1.0f };
 
 
@@ -126,7 +126,7 @@ float lightDir[4] = { 0.0f,0.0f,1.0f,1.0f };
 void timer(int value)
 {
 	std::ostringstream oss;
-	oss << CAPTION << ": " << FrameCount << " FPS @ (" << WinX << "x" << WinY << ")";
+	oss << CAPTION << ": " << FrameCount << " FPS @ (" << glutGet(GLUT_WINDOW_WIDTH) << "x" << glutGet(GLUT_WINDOW_HEIGHT) << ")";
 	std::string s = oss.str();
 	glutSetWindow(WindowHandle);
 	glutSetWindowTitle(s.c_str());
@@ -138,18 +138,18 @@ void timer(int value)
 void colision(int value) {
 
 	for (int i = 0; i < 4; i++) {
-		if (cylinderX > orangeX[i] - 1 && cylinderX < orangeX[i] + 1 && cylinderZ > orangeZ[i] - 1 && cylinderZ < orangeZ[i] + 1) {
-			cylinderX = 5;
-			cylinderZ = -48;
-			incremento = 0;
+		if (carX > orangeX[i] - 1 && carX < orangeX[i] + 1 && carZ > orangeZ[i] - 1 && carZ < orangeZ[i] + 1) {
+			carX = 5;
+			carZ = -48;
+			accelerationIncrement = 0;
 		}
 	}
 
 	for (int i = 0; i < 633; i++) {
-		if (cylinderX < torusX[i] + 0.7f && cylinderX > torusX[i]-0.7f && cylinderZ > torusZ[i] - 0.7f && cylinderZ < torusZ[i] + 0.7f && i < 628) {
-			if (cylinderX <= torusX[i]) {
+		if (carX < torusX[i] + 0.7f && carX > torusX[i]-0.7f && carZ > torusZ[i] - 0.7f && carZ < torusZ[i] + 0.7f && i < 628) { //Cheerios
+			if (carX <= torusX[i]) {
 				torusX[i] += colisionBounce;
-				if (cylinderZ <= torusZ[i]) {
+				if (carZ <= torusZ[i]) {
 					torusZ[i] += colisionBounce;
 				}
 				else {
@@ -158,20 +158,20 @@ void colision(int value) {
 			}
 			else {
 				torusX[i] -= colisionBounce;
-				if (cylinderZ <= torusZ[i]) {
+				if (carZ <= torusZ[i]) {
 					torusZ[i] += colisionBounce;
 				}
 				else {
 					torusZ[i] -= colisionBounce;
 				}
 			}
-			incremento = 0;
-			cylinderX = cylinderXbackup;
-			cylinderZ = cylinderZbackup;
-		} else if (cylinderX < torusX[i] + 4.7f && cylinderX > torusX[i] -0.7f && cylinderZ > torusZ[i] -0.7f && cylinderZ < torusZ[i] + 2.7f && i >= 628) {
-			if (cylinderX <= torusX[i]+2.0f) {
+			accelerationIncrement = 0;
+			carX = carXbackup;
+			carZ = carZbackup;
+		} else if (carX < torusX[i] + 4.7f && carX > torusX[i] -0.7f && carZ > torusZ[i] -0.7f && carZ < torusZ[i] + 2.7f && i >= 628) { //Manteigas
+			if (carX <= torusX[i]+2.0f) {
 				torusX[i] += colisionBounce;
-				if (cylinderZ <= torusZ[i]+1.0f) {
+				if (carZ <= torusZ[i]+1.0f) {
 					torusZ[i] += colisionBounce;
 				}
 				else {
@@ -180,20 +180,20 @@ void colision(int value) {
 			}
 			else {
 				torusX[i] -= colisionBounce;
-				if (cylinderZ <= torusZ[i]+1.0f) {
+				if (carZ <= torusZ[i]+1.0f) {
 					torusZ[i] += colisionBounce;
 				}
 				else {
 					torusZ[i] -= colisionBounce;
 				}
 			}
-			incremento = 0;
-			cylinderX = cylinderXbackup;
-			cylinderZ = cylinderZbackup;
+			accelerationIncrement = 0;
+			carX = carXbackup;
+			carZ = carZbackup;
 		}
 		else {
-			cylinderXbackup = cylinderX;
-			cylinderZbackup = cylinderZ;
+			carXbackup = carX;
+			carZbackup = carZ;
 		}
 	}
 
@@ -209,16 +209,16 @@ void move(int value)
 		angulo = 0;
 	}
 	float converter = angulo * (3.14 / 180);
-	cylinderZ += cos(converter) * incremento;
-	cylinderX += sin(converter) * incremento;
-	if (incremento < 0) {
-		incremento += 0.0005f; //para corrigir
+	carZ += cos(converter) * accelerationIncrement;
+	carX += sin(converter) * accelerationIncrement;
+	if (accelerationIncrement < 0) {
+		accelerationIncrement += 0.0005f; //para corrigir
 	}
-	if (incremento > 0) {
-		incremento -= 0.0005f;
+	if (accelerationIncrement > 0) {
+		accelerationIncrement -= 0.0005f;
 	}
-	if ((incremento > -0.0005f && incremento < 0) || (incremento < 0.0005f && incremento > 0)) { //correcao do bug do carro nunca parar por um erro qualquer de computacao
-		incremento = 0;
+	if ((accelerationIncrement > -0.0005f && accelerationIncrement < 0) || (accelerationIncrement < 0.0005f && accelerationIncrement > 0)) { //correcao do bug do carro nunca parar por um erro qualquer de computacao
+		accelerationIncrement = 0;
 	}
 
 	glutTimerFunc(1, move, 0);
@@ -266,7 +266,12 @@ void changeSize(int w, int h) {
 	ratio = (1.0f * w) / h;
 	loadIdentity(PROJECTION);
 	if (cameraFlag == 1) {
-		ortho(-16.0f, 16.0f, -12.0f, 12.0f, 0.1f, 1000.0f);
+		if (w <= h)
+			ortho(-16.0, 16.0, -16.0 * (GLfloat)h / (GLfloat)w, 16.0 * (GLfloat)h / (GLfloat)w, -10, 10);
+		else
+			ortho(-16.0 * (GLfloat)w / (GLfloat)h, 16.0 * (GLfloat)w / (GLfloat)h, -16.0, 16.0, -10, 10);
+
+		//ortho(-16.0f, 16.0f, -16.0f, 16.0f, 0.1f, 1000.0f);
 		//using WinX = 640, WinY = 480 aspect ratio
 	}
 
@@ -278,7 +283,6 @@ void changeSize(int w, int h) {
 		perspective(70.13f, ratio, 0.1f, 1000.0f);
 	}
 }
-
 
 
 // ------------------------------------------------------------
@@ -297,22 +301,22 @@ void renderScene(void) {
 	loadIdentity(MODEL);
 	// set the camera using a function similar to gluLookAt
 	if (cameraFlag == 1) { //Fixed ortho camera
-		lookAt(cylinderX, 10.0f, cylinderZ, cylinderX, cylinderY, cylinderZ + 0.01, 0, 1, 0);
-		changeSize(WinX, WinY);
+		lookAt(carX, 10.0f, carZ, carX, carY, carZ + 0.01, 0, 1, 0);
+		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 	}
 	else if (cameraFlag == 2) { //Fixed perspective camera
-		lookAt(cylinderX, 15.0f, cylinderZ, cylinderX, cylinderY, cylinderZ + 0.01, 0, 1, 0);
-		changeSize(WinX, WinY);
+		lookAt(carX, 15.0f, carZ, carX, carY, carZ + 0.01, 0, 1, 0);
+		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 	}
 	else if (cameraFlag == 3) { //Movement camera
-		lookAt(camX + cylinderX, camY + cylinderY, camZ + cylinderZ, cylinderX, cylinderY, cylinderZ, 0, 1, 0);
+		lookAt(camX + carX, camY + carY, camZ + carZ, carX, carY, carZ, 0, 1, 0);
 
 		//Translate camera to car's coordinates, rotate, and return back to original position
-		translate(VIEW, cylinderX, cylinderY, cylinderZ);
+		translate(VIEW, carX, carY, carZ);
 		rotate(VIEW, -angulo, 0.0, 1.0, 0.0);
-		translate(VIEW, -cylinderX, -cylinderY, -cylinderZ);
+		translate(VIEW, -carX, -carY, -carZ);
 
-		changeSize(WinX, WinY);
+		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 	}
 	
 	// use our shader
@@ -378,12 +382,12 @@ void renderScene(void) {
 		lPos_uniformId7 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[6]"); //holofote
 		lPos_uniformId8 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[7]"); //holofote
 		
-		float res8[4] = {cylinderX+0.5f,cylinderY,cylinderZ+0.5f,1.0f};
+		float res8[4] = {carX+0.5f,carY,carZ+0.5f,1.0f};
 		float res11[4];
 		multMatrixPoint(VIEW, res8, res11);
 		glUniform4fv(lPos_uniformId7, 1, res11);
 
-		float res9[4] = { cylinderX-0.5f,cylinderY,cylinderZ+0.5f,1.0f };
+		float res9[4] = { carX-0.5f,carY,carZ+0.5f,1.0f };
 		float res10[4];
 		multMatrixPoint(VIEW, res9, res10);
 		glUniform4fv(lPos_uniformId8, 1, res10);
@@ -453,7 +457,7 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 	
-	translate(MODEL, cylinderX, cylinderY, cylinderZ);
+	translate(MODEL, carX, carY, carZ);
 	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, angulo, 0, 0, 1.0f);
 
@@ -489,7 +493,7 @@ void renderScene(void) {
 	
 	pushMatrix(MODEL);
 
-	translate(MODEL, cylinderX, cylinderY, cylinderZ);
+	translate(MODEL, carX, carY, carZ);
 	rotate(MODEL, angulo, 0, 1.0f, 0);
 	translate(MODEL, -0.4f, -0.25f, 0.25f);
 	rotate(MODEL, -90, 0, 0, 1.0f);
@@ -524,7 +528,7 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, cylinderX, cylinderY, cylinderZ);
+	translate(MODEL, carX, carY, carZ);
 	rotate(MODEL, angulo, 0, 1.0f, 0);
 	translate(MODEL, -0.4f, -0.25f, -0.25f);
 	rotate(MODEL, -90, 0, 0, 1.0f);
@@ -559,7 +563,7 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, cylinderX, cylinderY, cylinderZ);
+	translate(MODEL, carX, carY, carZ);
 	rotate(MODEL, angulo, 0, 1.0f, 0);
 	translate(MODEL, 0.4f,- 0.25f,- 0.25f);
 	rotate(MODEL, -90, 0, 0, 1.0f);
@@ -594,7 +598,7 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, cylinderX, cylinderY, cylinderZ);
+	translate(MODEL, carX, carY, carZ);
 	rotate(MODEL, angulo, 0, 1.0f, 0);
 	translate(MODEL, 0.4f, -0.25f, 0.25f);
 	rotate(MODEL, -90, 0, 0, 1.0f);
@@ -1165,7 +1169,7 @@ void renderScene(void) {
 	glEnable(GL_BLEND);
 	glDepthMask(GL_FALSE);
 	
-	//VIDRO
+	//VIDRO DO CARRO
 	objId = 782;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
@@ -1177,12 +1181,44 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, cylinderX, cylinderY, cylinderZ);
+	translate(MODEL, carX, carY, carZ);
 	rotate(MODEL, angulo, 0, 1.0f, 0);
 	translate(MODEL, -0.5f, 0.25f, 0.5f);
-	//rotate(MODEL, -90, 1.0f, 0, 0);
-	//rotate(MODEL, -90, 0, 0, 1.0f);
 	scale(MODEL, 1.0f, 1.0f, 0.1f);
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
+
+	//VIDRO NA PISTA
+	objId = 783;
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	translate(MODEL, 2.5f, 0.0f, -45.0f);
+	scale(MODEL, 5.0f, 5.0f, 0.1f);
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -1225,21 +1261,25 @@ void processKeys(unsigned char key, int xx, int yy)
 			glutLeaveMainLoop();
 			break;
 
-		case 'l': printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, beta, r); break;
-		case 'm': glEnable(GL_MULTISAMPLE); break;
+		//case 'l': printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, beta, r); break;
+		//case 'm': glEnable(GL_MULTISAMPLE); break;
 		//case 'n': glDisable(GL_MULTISAMPLE); break;
+
+		//Camera keys
 		case '1': cameraFlag = 1; break;
 		case '2': cameraFlag = 2; break;
 		case '3': cameraFlag = 3; break;
 
+		//Car Movement keys
+		case 'q': if (accelerationIncrement <= 0.15f) {  accelerationIncrement += 0.01f;  } break; //Forwards
+		case 'a': if (accelerationIncrement >= -0.15f) { accelerationIncrement -= 0.01f;  } break; //Backwards
+		case 'o': angulo += 4; if (accelerationIncrement <= 0.02f) { accelerationIncrement += 0.01f; } break; //Left
+		case 'p': angulo -= 4; if (accelerationIncrement <= 0.02f) { accelerationIncrement += 0.01f; } break; //Right
 
-		case 'w': if (incremento <= 0.15f) {  incremento += 0.01f;  } break;
-		case 's': if (incremento >= -0.15f) { incremento -= 0.01f;  } break;
-		case 'a': angulo += 4; if (incremento <= 0.02f) { incremento += 0.01f; } break;
-		case 'd': angulo -= 4; if (incremento <= 0.02f) { incremento += 0.01f; } break;
-		case 'n': if (lightFlag == 1) { lightFlag = 0; }else { lightFlag = 1; } break;
-		case 'c': if (lightFlag2 == 1) { lightFlag2 = 0; } else { lightFlag2 = 1; } break;
-		case 'h': if (lightFlag3 == 1) { lightFlag3 = 0; } else { lightFlag3 = 1; } break;
+		//Light keys
+		case 'n': if (lightFlag == 1) { lightFlag = 0; }else { lightFlag = 1; } break; //Disable Directional light
+		case 'c': if (lightFlag2 == 1) { lightFlag2 = 0; } else { lightFlag2 = 1; } break; //Disable Candle lights
+		case 'h': if (lightFlag3 == 1) { lightFlag3 = 0; } else { lightFlag3 = 1; } break; //Disable Spotlight lights
 
 	}
 }
@@ -1366,7 +1406,7 @@ GLuint setupShaders() {
 	lPos_uniformId4 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[3]");
 	lPos_uniformId5 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[4]");
 	lPos_uniformId6 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[5]");
-	lStr_uniformId = glGetUniformLocation(shader.getProgramIndex(), "luzAmbiente");
+	lStr_uniformId = glGetUniformLocation(shader.getProgramIndex(), "luzDirectional");
 	lStr_uniformId2 = glGetUniformLocation(shader.getProgramIndex(), "luzDifusa");
 	lStr_uniformId3 = glGetUniformLocation(shader.getProgramIndex(), "luzHolofote");
 	tex_loc = glGetUniformLocation(shader.getProgramIndex(), "texmap");
@@ -1374,7 +1414,7 @@ GLuint setupShaders() {
 	tex_loc2 = glGetUniformLocation(shader.getProgramIndex(), "texmap2");
 
 	
-	printf("InfoLog for Per Fragment Phong Lightning Shader\n%s\n\n", shader.getAllInfoLogs().c_str());
+	printf("InfoLog for MicroMachines Project\n%s\n\n", shader.getAllInfoLogs().c_str());
 	
 	return(shader.isProgramLinked());
 }
@@ -1634,7 +1674,7 @@ void init()
 		objId++;
 	}
 
-	//VIDRO
+	//VIDRO DO CARRO
 	objId = 782;
 	memcpy(mesh[objId].mat.ambient, amb4, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.diffuse, diff4, 4 * sizeof(float));
@@ -1643,6 +1683,18 @@ void init()
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
 	createCube();
+
+	//VIDRO NA PISTA
+	diff1[3] = 0.5f;
+	objId = 783;
+	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
+	mesh[objId].mat.shininess = shininess;
+	mesh[objId].mat.texCount = texcount;
+	createCube();
+	diff1[3] = 1.0f;
 
 
 	// some GL settings

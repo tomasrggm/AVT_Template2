@@ -21,7 +21,7 @@
     <ClCompile Include="basic_geometry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="lightDemo.cpp">
+    <ClCompile Include="microMachines.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vsShaderLib.cpp">
