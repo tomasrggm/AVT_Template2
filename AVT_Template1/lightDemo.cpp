@@ -63,7 +63,7 @@ unsigned int FrameCount = 0;
 
 VSShaderLib shader;
 
-struct MyMesh mesh[789];
+struct MyMesh mesh[785];
 int objId=0; //id of the object mesh - to be used as index of mesh: mesh[objID] means the current mesh
 
 
@@ -225,8 +225,8 @@ void move(int value)
 }
 
 void movementOrange(int value) {
-	orangeRot += 0.01;
-	if (orangeRot >= 360) {
+	orangeRot -= 2;
+	if (orangeRot <= -360) {
 		orangeRot = 0;
 	}
 
@@ -414,6 +414,7 @@ void renderScene(void) {
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
+
 	translate(MODEL, -100.0f, 0, -100.0f);
 	scale(MODEL, 200.0f, 1.0f, 200.0f);
 
@@ -438,6 +439,8 @@ void renderScene(void) {
 
 	popMatrix(MODEL);
 	glUniform1i(texMode_uniformId, 1);
+
+
 	//CARRO
 	objId = 1;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
@@ -489,7 +492,6 @@ void renderScene(void) {
 	translate(MODEL, cylinderX, cylinderY, cylinderZ);
 	rotate(MODEL, angulo, 0, 1.0f, 0);
 	translate(MODEL, -0.4f, -0.25f, 0.25f);
-	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
 
 	// send matrices to OGL
@@ -525,7 +527,6 @@ void renderScene(void) {
 	translate(MODEL, cylinderX, cylinderY, cylinderZ);
 	rotate(MODEL, angulo, 0, 1.0f, 0);
 	translate(MODEL, -0.4f, -0.25f, -0.25f);
-	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
 
 	// send matrices to OGL
@@ -558,11 +559,9 @@ void renderScene(void) {
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	//rotate(MODEL, angulo, 0, cylinderY, cylinderZ);
 	translate(MODEL, cylinderX, cylinderY, cylinderZ);
 	rotate(MODEL, angulo, 0, 1.0f, 0);
 	translate(MODEL, 0.4f,- 0.25f,- 0.25f);
-	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
 
 	// send matrices to OGL
@@ -598,7 +597,6 @@ void renderScene(void) {
 	translate(MODEL, cylinderX, cylinderY, cylinderZ);
 	rotate(MODEL, angulo, 0, 1.0f, 0);
 	translate(MODEL, 0.4f, -0.25f, 0.25f);
-	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, -90, 0, 0, 1.0f);
 
 	// send matrices to OGL
@@ -621,8 +619,8 @@ void renderScene(void) {
 	popMatrix(MODEL);
 
 	//LARANJAS
+	objId = 6;
 	for (int i = 0; i < 4; i++) {
-		objId++;
 		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 		glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
@@ -633,9 +631,9 @@ void renderScene(void) {
 		glUniform1f(loc, mesh[objId].mat.shininess);
 		pushMatrix(MODEL);
 
-
-		rotate(MODEL, orangeRot, 0, 1.0f, 0);
 		translate(MODEL, orangeX[i], 2.0f, orangeZ[i]);
+		rotate(MODEL, orangeRot, 0, 0, 0.1f);
+		
 
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);
@@ -655,10 +653,50 @@ void renderScene(void) {
 		glBindVertexArray(0);
 
 		popMatrix(MODEL);
+
+		objId++;
+	}
+
+	//FOLHAS
+	objId = 10;
+	for (int i = 0; i < 4; i++) {
+		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+		glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+		glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+		glUniform4fv(loc, 1, mesh[objId].mat.specular);
+		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+		glUniform1f(loc, mesh[objId].mat.shininess);
+		pushMatrix(MODEL);
+
+		translate(MODEL, orangeX[i], 2.0f, orangeZ[i]);
+		rotate(MODEL, orangeRot, 0, 0, 1.0f);
+		translate(MODEL, 0, 1.0f, 0);
+
+		// send matrices to OGL
+		computeDerivedMatrix(PROJ_VIEW_MODEL);
+		glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+		glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+		computeNormalMatrix3x3();
+		glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+		// Render mesh
+		glBindVertexArray(mesh[objId].vao);
+
+		if (!shader.isProgramValid()) {
+			printf("Program Not Valid!\n");
+			exit(1);
+		}
+		glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		popMatrix(MODEL);
+		objId++;
 	}
 
 	//MANTEIGAS
-	objId = 10;
+	objId = 14;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
@@ -695,7 +733,7 @@ void renderScene(void) {
 
 	popMatrix(MODEL);
 
-	objId = 11;
+	objId = 15;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
@@ -731,7 +769,7 @@ void renderScene(void) {
 
 	popMatrix(MODEL);
 
-	objId = 12;
+	objId = 16;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
@@ -767,7 +805,7 @@ void renderScene(void) {
 
 	popMatrix(MODEL);
 
-	objId = 13;
+	objId = 17;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
@@ -805,7 +843,7 @@ void renderScene(void) {
 
 
 	//CHEERIOS
-	objId = 14;
+	objId = 18;
 
 	for (int i = -50; i < 48; ++i) {
 		// send the material
@@ -844,7 +882,7 @@ void renderScene(void) {
 	}
 
 	//CHEERIOS
-	objId = 130;
+	objId = 134;
 
 	for (int i = -58; i < 57; ++i) {
 		// send the material
@@ -886,7 +924,7 @@ void renderScene(void) {
 	
 
 	//CHEERIOS
-	objId = 246;
+	objId = 250;
 
 	for (int i = -50; i < 10; ++i) {
 		// send the material
@@ -927,7 +965,7 @@ void renderScene(void) {
 	
 
 	//CHEERIOS
-	objId = 362;
+	objId = 366;
 
 	for (int i = -50; i < 10; ++i) {
 		// send the material
@@ -967,7 +1005,7 @@ void renderScene(void) {
 	}
 	
 	//CHEERIOS
-	objId = 478;
+	objId = 482;
 
 	for (int i = -58; i < 57; ++i) {
 		// send the material
@@ -1007,7 +1045,7 @@ void renderScene(void) {
 	}
 	
 	//CHEERIOS
-	objId = 595;
+	objId = 599;
 	for (int i = -40; i < 1; ++i) {
 		// send the material
 		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
@@ -1045,7 +1083,7 @@ void renderScene(void) {
 		objId++;
 	}
 	
-	objId = 639;
+	objId = 643;
 	for (int i = -40; i < 1; ++i) {
 		// send the material
 		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
@@ -1085,7 +1123,7 @@ void renderScene(void) {
 
 	
 	//CHEERIOS
-	objId = 680;
+	objId = 684;
 
 	for (int i = -50; i < 48; ++i) {
 		// send the material
@@ -1128,7 +1166,7 @@ void renderScene(void) {
 	glDepthMask(GL_FALSE);
 	
 	//VIDRO
-	objId = 778;
+	objId = 782;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
@@ -1363,8 +1401,8 @@ void init()
 
 	glGenTextures(3, TextureArray);
 	Texture2D_Loader(TextureArray, "stone.tga", 0);
-	Texture2D_Loader(TextureArray, "table-cloth.png", 1);
-	Texture2D_Loader(TextureArray, "lightwood.tga", 2);
+	Texture2D_Loader(TextureArray, "table-cloth3.jpg", 1);
+	Texture2D_Loader(TextureArray, "cloth2.jpg", 2);
 
 	
 	//Cream
@@ -1395,6 +1433,11 @@ void init()
 	float amb4[] = { 0.3f, 0.0f, 1.0f, 1.0f };
 	float diff4[] = { 0.8f, 0.6f, 0.4f, 0.5f };
 	float spec4[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+	//Green
+	float amb5[] = { 0.0f, 0.3f, 0.0f, 1.0f };
+	float diff5[] = { 0.0f, 0.3f, 0.0f, 1.0f };
+	float spec5[] = { 0.9f, 0.9f, 0.9f, 1.0f };
 
 
 	//MESA
@@ -1456,80 +1499,46 @@ void init()
 
 	//LARANJAS
 	objId = 6;
-	memcpy(mesh[objId].mat.ambient, amb2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
-	mesh[objId].mat.shininess = shininess;
-	mesh[objId].mat.texCount = texcount;
-	createSphere(1.0f, 20);
+	for (int i = 0; i < 4; i++) {
+		memcpy(mesh[objId].mat.ambient, amb2, 4 * sizeof(float));
+		memcpy(mesh[objId].mat.diffuse, diff2, 4 * sizeof(float));
+		memcpy(mesh[objId].mat.specular, spec2, 4 * sizeof(float));
+		memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
+		mesh[objId].mat.shininess = shininess;
+		mesh[objId].mat.texCount = texcount;
+		createSphere(1.0f, 20);
+		objId++;
+	}
 
-	objId = 7;
-	memcpy(mesh[objId].mat.ambient, amb2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
-	mesh[objId].mat.shininess = shininess;
-	mesh[objId].mat.texCount = texcount;
-	createSphere(1.0f, 20);
-
-	objId = 8;
-	memcpy(mesh[objId].mat.ambient, amb2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
-	mesh[objId].mat.shininess = shininess;
-	mesh[objId].mat.texCount = texcount;
-	createSphere(1.0f, 20);
-
-	objId = 9;
-	memcpy(mesh[objId].mat.ambient, amb2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec2, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
-	mesh[objId].mat.shininess = shininess;
-	mesh[objId].mat.texCount = texcount;
-	createSphere(1.0f, 20);
+	//FOLHAS
+	objId = 10;
+	for (int i = 0; i < 4; i++) {
+		memcpy(mesh[objId].mat.ambient, amb5, 4 * sizeof(float));
+		memcpy(mesh[objId].mat.diffuse, diff5, 4 * sizeof(float));
+		memcpy(mesh[objId].mat.specular, spec5, 4 * sizeof(float));
+		memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
+		mesh[objId].mat.shininess = shininess;
+		mesh[objId].mat.texCount = texcount;
+		createCylinder(0.2f, 0.08f, 16);
+		objId++;
+	}
 
 	//MANTEIGAS
-	objId = 10;
-	memcpy(mesh[objId].mat.ambient, amb3, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff3, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec3, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
-	mesh[objId].mat.shininess = shininess;
-	mesh[objId].mat.texCount = texcount;
-	createCube();
-
-	objId = 11;
-	memcpy(mesh[objId].mat.ambient, amb3, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff3, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec3, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
-	mesh[objId].mat.shininess = shininess;
-	mesh[objId].mat.texCount = texcount;
-	createCube();
-
-	objId = 12;
-	memcpy(mesh[objId].mat.ambient, amb3, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff3, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec3, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
-	mesh[objId].mat.shininess = shininess;
-	mesh[objId].mat.texCount = texcount;
-	createCube();
-
-	objId = 13;
-	memcpy(mesh[objId].mat.ambient, amb3, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff3, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec3, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
-	mesh[objId].mat.shininess = shininess;
-	mesh[objId].mat.texCount = texcount;
-	createCube();
+	objId = 14;
+	for (int i = 0; i < 4; i++) {
+		memcpy(mesh[objId].mat.ambient, amb3, 4 * sizeof(float));
+		memcpy(mesh[objId].mat.diffuse, diff3, 4 * sizeof(float));
+		memcpy(mesh[objId].mat.specular, spec3, 4 * sizeof(float));
+		memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
+		mesh[objId].mat.shininess = shininess;
+		mesh[objId].mat.texCount = texcount;
+		createCube();
+		objId++;
+	}
+	
 
 	//Cheerios
-	objId = 14;
+	objId = 18;
 	for (int i = -50; i < 48; ++i) {
 		memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
 		memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
@@ -1541,7 +1550,7 @@ void init()
 		objId++;
 	}
 
-	objId = 130;
+	objId = 134;
 	for (int i = -58; i < 57; ++i) {
 		memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
 		memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
@@ -1553,7 +1562,7 @@ void init()
 		objId++;
 	}
 
-	objId = 246;
+	objId = 250;
 	for (int i = -50; i < 10; ++i) {
 		memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
 		memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
@@ -1565,7 +1574,7 @@ void init()
 		objId++;
 	}
 
-	objId = 362;
+	objId = 366;
 	for (int i = -50; i < 10; ++i) {
 		memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
 		memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
@@ -1577,7 +1586,7 @@ void init()
 		objId++;
 	}
 
-	objId = 478;
+	objId = 482;
 	for (int i = -58; i < 57; ++i) {
 		memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
 		memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
@@ -1589,7 +1598,7 @@ void init()
 		objId++;
 	}
 
-	objId = 595;
+	objId = 599;
 	for (int i = -40; i < 1; ++i) {
 		memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
 		memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
@@ -1601,7 +1610,7 @@ void init()
 		objId++;
 	}
 
-	objId = 639;
+	objId = 643;
 	for (int i = -40; i < 1; ++i) {
 		memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
 		memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
@@ -1613,7 +1622,7 @@ void init()
 		objId++;
 	}
 
-	objId = 680;
+	objId = 684;
 	for (int i = -50; i < 48; ++i) {
 		memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
 		memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
@@ -1626,7 +1635,7 @@ void init()
 	}
 
 	//VIDRO
-	objId = 778;
+	objId = 782;
 	memcpy(mesh[objId].mat.ambient, amb4, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.diffuse, diff4, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.specular, spec4, 4 * sizeof(float));

@@ -110,5 +110,5 @@ void main() {
 	}
 
 	colorOut[3] = mat.diffuse.a; 
-	colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
+	//colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
 }
