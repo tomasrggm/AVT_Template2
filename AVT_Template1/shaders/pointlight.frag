@@ -98,10 +98,10 @@ void main() {
 	float distance = length(pos); //range based
 	//float distance = abs(pos.z); //plane based
 
-	float visibility = exp(-distance*density);
+	float visibility = exp(-distance*density); //fog function
 	//visibility = clamp(visibility, 0.0, 1.0);
 
-	if(texMode == 0) {
+	if(texMode == 0) { //Ensure directional light applies to the textures
 		colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel * texel1);
 	}
 
@@ -110,5 +110,5 @@ void main() {
 	}
 
 	colorOut[3] = mat.diffuse.a; 
-	colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
+	//colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
 }
