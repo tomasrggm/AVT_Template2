@@ -56,6 +56,9 @@
     <ClInclude Include="avtFreeType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="microMachines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\pointlight.frag">

@@ -32,10 +32,12 @@
 #include "basic_geometry.h"
 #include "Texture_Loader.h"
 #include "avtFreeType.h"
+#include "microMachines.h"
 
 #define CAPTION "AVT MicroMachines Project - Delivery 1"
 int WindowHandle = 0;
 int WinX = 640, WinY = 480;
+int useTeacherKeys = 0; //By default, use keys as defined by the teacher
 
 
 //isto fui eu que pus
@@ -64,6 +66,9 @@ int vidas = 5;
 int pontos = 0;
 
 unsigned int FrameCount = 0;
+float oldTimeSinceStart = 0;
+float timeSinceStart = 0;
+float deltaTime = 0;
 
 VSShaderLib shader, shaderText;
 
@@ -213,26 +218,26 @@ void colision(int value) {
 
 
 
-void move(int value)
-{
+void move(int value) {
 	if (pauseFlag == 0) {
 		if (angulo > 360 || angulo < -360) {
 			angulo = 0;
 		}
 		float converter = angulo * (3.14 / 180);
-		carZ += cos(converter) * accelerationIncrement;
-		carX += sin(converter) * accelerationIncrement;
+		carZ += cos(converter) * accelerationIncrement * deltaTime;
+		carX += sin(converter) * accelerationIncrement * deltaTime;
 		if (accelerationIncrement < 0) {
-			accelerationIncrement += 0.0005f; //para corrigir
+			accelerationIncrement += 1.0f * deltaTime;
 		}
 		if (accelerationIncrement > 0) {
-			accelerationIncrement -= 0.0005f;
+			accelerationIncrement -= 3.0f * deltaTime;
 		}
-		if ((accelerationIncrement > -0.0005f && accelerationIncrement < 0) || (accelerationIncrement < 0.0005f && accelerationIncrement > 0)) { //correcao do bug do carro nunca parar por um erro qualquer de computacao
+		if ((accelerationIncrement > -1.0f * deltaTime && accelerationIncrement < 0) || (accelerationIncrement < 1.0f * deltaTime && accelerationIncrement > 0)) { //correcao do bug do carro nunca parar por um erro qualquer de computacao
 			accelerationIncrement = 0;
 		}
 	}
 	glutTimerFunc(1, move, 0);
+	oldTimeSinceStart = timeSinceStart;
 }
 
 void movementOrange(int value) {
@@ -243,7 +248,8 @@ void movementOrange(int value) {
 		}
 
 		for (int i = 0; i < 4; i++) {
-			orangeSpeed[i] += 0.00005f * (i + 1);
+			orangeSpeed[i] += 0.005f * (i + 1) * deltaTime;
+			printf("orangeSpeed %f\n", orangeSpeed[i]);
 
 			orangeX[i] += orangeSpeed[i];
 			if (orangeX[i] > 50) {
@@ -307,6 +313,11 @@ void changeSize(int w, int h) {
 void renderScene(void) {
 	
 	GLint loc;
+
+	timeSinceStart = glutGet(GLUT_ELAPSED_TIME);
+	deltaTime = timeSinceStart - oldTimeSinceStart;
+	deltaTime = deltaTime / 1000;
+	oldTimeSinceStart = timeSinceStart;
 
 	FrameCount++;
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1284,8 +1295,6 @@ void renderScene(void) {
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
 
-
-
 	glutSwapBuffers();
 }
 
@@ -1295,14 +1304,16 @@ void renderScene(void) {
 // Events from the Keyboard
 //
 
-void processKeys(unsigned char key, int xx, int yy)
-{
-	switch (key) {
+void processKeys(unsigned char key, int xx, int yy) {
+
+	if (useTeacherKeys == 0) {
+		switch (key) {
 
 		case 27:
 			glutLeaveMainLoop();
 			break;
 
+		case '-': useTeacherKeys = 1;
 		//case 'l': printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, beta, r); break;
 		//case 'm': glEnable(GL_MULTISAMPLE); break;
 		//case 'n': glDisable(GL_MULTISAMPLE); break;
@@ -1313,17 +1324,55 @@ void processKeys(unsigned char key, int xx, int yy)
 		case '3': cameraFlag = 3; break;
 
 		//Car Movement keys
-		case 'q': if (accelerationIncrement <= 0.15f && pauseFlag == 0) {  accelerationIncrement += 0.01f;  } break; //Forwards
-		case 'a': if (accelerationIncrement >= -0.15f && pauseFlag == 0) { accelerationIncrement -= 0.01f;  } break; //Backwards
-		case 'o': if (pauseFlag == 0) { angulo += 4; if (accelerationIncrement <= 0.02f) { accelerationIncrement += 0.01f; } } break; //Left
-		case 'p': if (pauseFlag == 0) { angulo -= 4; if (accelerationIncrement <= 0.02f) { accelerationIncrement += 0.01f; } } break; //Right
-		case 's': if (pauseFlag == 1) { pauseFlag = 0; } else{ pauseFlag = 1; } break;
+		case 'q': if (accelerationIncrement <= 10.0f && pauseFlag == 0) { accelerationIncrement += 1.0f; } break; //Forwards
+		case 'a': if (accelerationIncrement >= -10.0f && pauseFlag == 0) { accelerationIncrement -= 1.0f; } break; //Backwards
+		case 'o': if (pauseFlag == 0) { angulo += 4; } break; //Left
+		case 'p': if (pauseFlag == 0) { angulo -= 4; } break; //Right
+		case 's': if (pauseFlag == 1) { pauseFlag = 0; }
+				else { pauseFlag = 1; } break;
 
 		//Light keys
-		case 'n': if (lightFlag == 1) { lightFlag = 0; } else { lightFlag = 1; } break; //Disable Directional light
-		case 'c': if (lightFlag2 == 1) { lightFlag2 = 0; } else { lightFlag2 = 1; } break; //Disable Candle lights
-		case 'h': if (lightFlag3 == 1) { lightFlag3 = 0; } else { lightFlag3 = 1; } break; //Disable Spotlight lights
+		case 'n': if (lightFlag == 1) { lightFlag = 0; }
+				else { lightFlag = 1; } break; //Disable Directional light
+		case 'c': if (lightFlag2 == 1) { lightFlag2 = 0; }
+				else { lightFlag2 = 1; } break; //Disable Candle lights
+		case 'h': if (lightFlag3 == 1) { lightFlag3 = 0; }
+				else { lightFlag3 = 1; } break; //Disable Spotlight lights
+		}
+	}
+	else {
+		switch (key) {
 
+		case 27:
+			glutLeaveMainLoop();
+			break;
+
+		case '-': useTeacherKeys = 0;
+		//case 'l': printf("Camera Spherical Coordinates (%f, %f, %f)\n", alpha, beta, r); break;
+		//case 'm': glEnable(GL_MULTISAMPLE); break;
+		//case 'n': glDisable(GL_MULTISAMPLE); break;
+
+		//Camera keys
+		case '1': cameraFlag = 1; break;
+		case '2': cameraFlag = 2; break;
+		case '3': cameraFlag = 3; break;
+
+		//Car Movement keys
+		case 'w': if (accelerationIncrement <= 10.0f && pauseFlag == 0) { accelerationIncrement += 1.0f; } break; //Forwards
+		case 's': if (accelerationIncrement >= -10.0f && pauseFlag == 0) { accelerationIncrement -= 1.0f; } break; //Backwards
+		case 'a': if (pauseFlag == 0) { angulo += 4; } break; //Left
+		case 'd': if (pauseFlag == 0) { angulo -= 4; } break; //Right
+		case 'p': if (pauseFlag == 1) { pauseFlag = 0; }
+				else { pauseFlag = 1; } break;
+
+		//Light keys
+		case 'n': if (lightFlag == 1) { lightFlag = 0; }
+				else { lightFlag = 1; } break; //Disable Directional light
+		case 'c': if (lightFlag2 == 1) { lightFlag2 = 0; }
+				else { lightFlag2 = 1; } break; //Disable Candle lights
+		case 'h': if (lightFlag3 == 1) { lightFlag3 = 0; }
+				else { lightFlag3 = 1; } break; //Disable Spotlight lights
+		}
 	}
 }
 

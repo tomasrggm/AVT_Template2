@@ -30,7 +30,7 @@ in Data {
 	vec3 eye;
 	vec3 lightDir;
 	vec2 tex_coord;
-} DataIn[7];
+} DataIn[8];
 
 in vec4 pos;
 
@@ -40,7 +40,7 @@ void main() {
 	vec4 texel = vec4(0.0);
 	vec4 texel1 = vec4(0.0);
 
-	for(int i = 0; i < 7; ++i) {
+	for(int i = 0; i < 8; ++i) {
 		if(i < 6) {
 			vec3 n = normalize(DataIn[i].normal);
 			vec3 l = normalize(DataIn[i].lightDir);
@@ -110,5 +110,5 @@ void main() {
 	}
 
 	colorOut[3] = mat.diffuse.a; 
-	//colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
+	colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
 }
