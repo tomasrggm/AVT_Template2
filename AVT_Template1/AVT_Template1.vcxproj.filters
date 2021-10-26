@@ -30,6 +30,9 @@
     <ClCompile Include="Texture_Loader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="avtFreeType.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AVTmathLib.h">
@@ -50,6 +53,9 @@
     <ClInclude Include="Texture_Loader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="avtFreeType.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\pointlight.frag">
@@ -59,5 +65,11 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="Dependencies.exe" />
+    <None Include="shaders\text.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shaders\text.vert">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

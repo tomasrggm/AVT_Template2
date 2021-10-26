@@ -13,7 +13,7 @@ out Data {
 	vec3 eye;
 	vec3 lightDir;
 	vec2 tex_coord;
-} DataOut[8];
+} DataOut[7];
 
 in vec4 position;
 in vec4 texCoord;
@@ -22,7 +22,7 @@ out vec4 pos;
 void main () {
 
 	pos = m_viewModel * position;
-	for(int i = 0; i < 8; ++i) {
+	for(int i = 0; i < 7; ++i) {
 		DataOut[i].normal = normalize(m_normal * normal.xyz);
 		DataOut[i].lightDir = vec3(l_pos[i] - pos);
 		DataOut[i].eye = vec3(-pos);

@@ -31,6 +31,7 @@
 #include "VertexAttrDef.h"
 #include "basic_geometry.h"
 #include "Texture_Loader.h"
+#include "avtFreeType.h"
 
 #define CAPTION "AVT MicroMachines Project - Delivery 1"
 int WindowHandle = 0;
@@ -58,10 +59,13 @@ float colisionBounce = 0.05f;
 float torusX[633];
 float torusZ[633];
 int renderedFlag = 0;
+int pauseFlag = 0;
+int vidas = 5;
+int pontos = 0;
 
 unsigned int FrameCount = 0;
 
-VSShaderLib shader;
+VSShaderLib shader, shaderText;
 
 struct MyMesh mesh[785];
 int objId=0; //id of the object mesh - to be used as index of mesh: mesh[objID] means the current mesh
@@ -120,6 +124,7 @@ float lightPos6[4] = { 5.0f, 6.0f, 5.0f, 1.0f };
 float spotAngle = 10.0f;
 float lightPos7[4] = {carX,carY,carZ,1.0f};
 float lightDir[4] = { 0.0f,0.0f,1.0f,1.0f };
+const std::string font_name = "fonts/arial.ttf";
 
 
 
@@ -136,66 +141,71 @@ void timer(int value)
 }
 
 void colision(int value) {
+	if (pauseFlag == 0) {
+		for (int i = 0; i < 4; i++) {
+			if (carX > orangeX[i] - 1 && carX < orangeX[i] + 1 && carZ > orangeZ[i] - 1 && carZ < orangeZ[i] + 1) {
+				carX = 5;
+				carZ = -48;
+				accelerationIncrement = 0;
+				vidas--;
+			}
+		}
 
-	for (int i = 0; i < 4; i++) {
-		if (carX > orangeX[i] - 1 && carX < orangeX[i] + 1 && carZ > orangeZ[i] - 1 && carZ < orangeZ[i] + 1) {
-			carX = 5;
-			carZ = -48;
-			accelerationIncrement = 0;
+		for (int i = 0; i < 633; i++) {
+			if (carX < torusX[i] + 0.7f && carX > torusX[i] - 0.7f && carZ > torusZ[i] - 0.7f && carZ < torusZ[i] + 0.7f && i < 628) { //Cheerios
+				if (carX <= torusX[i]) {
+					torusX[i] += colisionBounce;
+					if (carZ <= torusZ[i]) {
+						torusZ[i] += colisionBounce;
+					}
+					else {
+						torusZ[i] -= colisionBounce;
+					}
+				}
+				else {
+					torusX[i] -= colisionBounce;
+					if (carZ <= torusZ[i]) {
+						torusZ[i] += colisionBounce;
+					}
+					else {
+						torusZ[i] -= colisionBounce;
+					}
+				}
+				accelerationIncrement = 0;
+				carX = carXbackup;
+				carZ = carZbackup;
+			}
+			else if (carX < torusX[i] + 4.7f && carX > torusX[i] - 0.7f && carZ > torusZ[i] - 0.7f && carZ < torusZ[i] + 2.7f && i >= 628) { //Manteigas
+				if (carX <= torusX[i] + 2.0f) {
+					torusX[i] += colisionBounce;
+					if (carZ <= torusZ[i] + 1.0f) {
+						torusZ[i] += colisionBounce;
+					}
+					else {
+						torusZ[i] -= colisionBounce;
+					}
+				}
+				else {
+					torusX[i] -= colisionBounce;
+					if (carZ <= torusZ[i] + 1.0f) {
+						torusZ[i] += colisionBounce;
+					}
+					else {
+						torusZ[i] -= colisionBounce;
+					}
+				}
+				accelerationIncrement = 0;
+				carX = carXbackup;
+				carZ = carZbackup;
+			}
+			else {
+				carXbackup = carX;
+				carZbackup = carZ;
+			}
 		}
 	}
 
-	for (int i = 0; i < 633; i++) {
-		if (carX < torusX[i] + 0.7f && carX > torusX[i]-0.7f && carZ > torusZ[i] - 0.7f && carZ < torusZ[i] + 0.7f && i < 628) { //Cheerios
-			if (carX <= torusX[i]) {
-				torusX[i] += colisionBounce;
-				if (carZ <= torusZ[i]) {
-					torusZ[i] += colisionBounce;
-				}
-				else {
-					torusZ[i] -= colisionBounce;
-				}
-			}
-			else {
-				torusX[i] -= colisionBounce;
-				if (carZ <= torusZ[i]) {
-					torusZ[i] += colisionBounce;
-				}
-				else {
-					torusZ[i] -= colisionBounce;
-				}
-			}
-			accelerationIncrement = 0;
-			carX = carXbackup;
-			carZ = carZbackup;
-		} else if (carX < torusX[i] + 4.7f && carX > torusX[i] -0.7f && carZ > torusZ[i] -0.7f && carZ < torusZ[i] + 2.7f && i >= 628) { //Manteigas
-			if (carX <= torusX[i]+2.0f) {
-				torusX[i] += colisionBounce;
-				if (carZ <= torusZ[i]+1.0f) {
-					torusZ[i] += colisionBounce;
-				}
-				else {
-					torusZ[i] -= colisionBounce;
-				}
-			}
-			else {
-				torusX[i] -= colisionBounce;
-				if (carZ <= torusZ[i]+1.0f) {
-					torusZ[i] += colisionBounce;
-				}
-				else {
-					torusZ[i] -= colisionBounce;
-				}
-			}
-			accelerationIncrement = 0;
-			carX = carXbackup;
-			carZ = carZbackup;
-		}
-		else {
-			carXbackup = carX;
-			carZbackup = carZ;
-		}
-	}
+
 
 	glutTimerFunc(1, colision, 0);
 }
@@ -205,40 +215,44 @@ void colision(int value) {
 
 void move(int value)
 {
-	if (angulo > 360 || angulo < -360) {
-		angulo = 0;
+	if (pauseFlag == 0) {
+		if (angulo > 360 || angulo < -360) {
+			angulo = 0;
+		}
+		float converter = angulo * (3.14 / 180);
+		carZ += cos(converter) * accelerationIncrement;
+		carX += sin(converter) * accelerationIncrement;
+		if (accelerationIncrement < 0) {
+			accelerationIncrement += 0.0005f; //para corrigir
+		}
+		if (accelerationIncrement > 0) {
+			accelerationIncrement -= 0.0005f;
+		}
+		if ((accelerationIncrement > -0.0005f && accelerationIncrement < 0) || (accelerationIncrement < 0.0005f && accelerationIncrement > 0)) { //correcao do bug do carro nunca parar por um erro qualquer de computacao
+			accelerationIncrement = 0;
+		}
 	}
-	float converter = angulo * (3.14 / 180);
-	carZ += cos(converter) * accelerationIncrement;
-	carX += sin(converter) * accelerationIncrement;
-	if (accelerationIncrement < 0) {
-		accelerationIncrement += 0.0005f; //para corrigir
-	}
-	if (accelerationIncrement > 0) {
-		accelerationIncrement -= 0.0005f;
-	}
-	if ((accelerationIncrement > -0.0005f && accelerationIncrement < 0) || (accelerationIncrement < 0.0005f && accelerationIncrement > 0)) { //correcao do bug do carro nunca parar por um erro qualquer de computacao
-		accelerationIncrement = 0;
-	}
-
 	glutTimerFunc(1, move, 0);
 }
 
 void movementOrange(int value) {
-	orangeRot -= 2;
-	if (orangeRot <= -360) {
-		orangeRot = 0;
-	}
+	if (pauseFlag == 0) {
+		orangeRot -= 2;
+		if (orangeRot <= -360) {
+			orangeRot = 0;
+		}
 
-	for (int i = 0; i < 4; i++) {
-		orangeSpeed[i] += 0.00005f * (i + 1);
+		for (int i = 0; i < 4; i++) {
+			orangeSpeed[i] += 0.00005f * (i + 1);
 
-		orangeX[i] += orangeSpeed[i];
-		if (orangeX[i] > 50) {
-			orangeX[i] = -50;
-			orangeZ[i] = (rand() % 100) - 48;
+			orangeX[i] += orangeSpeed[i];
+			if (orangeX[i] > 50) {
+				orangeX[i] = -50;
+				orangeZ[i] = (rand() % 100) - 48;
+			}
 		}
 	}
+
 	glutTimerFunc(1, movementOrange, 0);
 }
 
@@ -1238,12 +1252,40 @@ void renderScene(void) {
 	glBindVertexArray(0);
 
 	popMatrix(MODEL);
-
 	glDisable(GL_BLEND);
 	glDepthMask(GL_TRUE);
 
 	renderedFlag = 1;
 	glBindTexture(GL_TEXTURE_2D, 0);
+
+	//Texto
+	glDisable(GL_DEPTH_TEST);
+	//the glyph contains background colors and non-transparent for the actual character pixels. So we use the blending
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	int m_viewport[4];
+	glGetIntegerv(GL_VIEWPORT, m_viewport);
+	pushMatrix(MODEL);
+	loadIdentity(MODEL);
+	pushMatrix(PROJECTION);
+	loadIdentity(PROJECTION);
+	pushMatrix(VIEW);
+	loadIdentity(VIEW);
+	ortho(m_viewport[0], m_viewport[0] + m_viewport[2] - 1, m_viewport[1], m_viewport[1] + m_viewport[3] - 1, -1, 1);
+	if (pauseFlag == 1) {
+		RenderText(shaderText, "Pausa", 2.0f * WinX / 5.0f, WinY / 2.0f, 1.0f, 0.5f, 0.8f, 0.2f);
+	}
+	std::string v = std::to_string(vidas);
+	std::string p = std::to_string(pontos);
+	RenderText(shaderText, "vidas: " + v + " pontos: " + p, 25.0f, 25.0f, 0.4f, 0.5f, 0.8f, 0.2f);
+	popMatrix(PROJECTION);
+	popMatrix(VIEW);
+	popMatrix(MODEL);
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+
+
+
 	glutSwapBuffers();
 }
 
@@ -1271,13 +1313,14 @@ void processKeys(unsigned char key, int xx, int yy)
 		case '3': cameraFlag = 3; break;
 
 		//Car Movement keys
-		case 'q': if (accelerationIncrement <= 0.15f) {  accelerationIncrement += 0.01f;  } break; //Forwards
-		case 'a': if (accelerationIncrement >= -0.15f) { accelerationIncrement -= 0.01f;  } break; //Backwards
-		case 'o': angulo += 4; if (accelerationIncrement <= 0.02f) { accelerationIncrement += 0.01f; } break; //Left
-		case 'p': angulo -= 4; if (accelerationIncrement <= 0.02f) { accelerationIncrement += 0.01f; } break; //Right
+		case 'q': if (accelerationIncrement <= 0.15f && pauseFlag == 0) {  accelerationIncrement += 0.01f;  } break; //Forwards
+		case 'a': if (accelerationIncrement >= -0.15f && pauseFlag == 0) { accelerationIncrement -= 0.01f;  } break; //Backwards
+		case 'o': if (pauseFlag == 0) { angulo += 4; if (accelerationIncrement <= 0.02f) { accelerationIncrement += 0.01f; } } break; //Left
+		case 'p': if (pauseFlag == 0) { angulo -= 4; if (accelerationIncrement <= 0.02f) { accelerationIncrement += 0.01f; } } break; //Right
+		case 's': if (pauseFlag == 1) { pauseFlag = 0; } else{ pauseFlag = 1; } break;
 
 		//Light keys
-		case 'n': if (lightFlag == 1) { lightFlag = 0; }else { lightFlag = 1; } break; //Disable Directional light
+		case 'n': if (lightFlag == 1) { lightFlag = 0; } else { lightFlag = 1; } break; //Disable Directional light
 		case 'c': if (lightFlag2 == 1) { lightFlag2 = 0; } else { lightFlag2 = 1; } break; //Disable Candle lights
 		case 'h': if (lightFlag3 == 1) { lightFlag3 = 0; } else { lightFlag3 = 1; } break; //Disable Spotlight lights
 
@@ -1388,6 +1431,12 @@ GLuint setupShaders() {
 	shader.loadShader(VSShaderLib::VERTEX_SHADER, "shaders/pointlight.vert");
 	shader.loadShader(VSShaderLib::FRAGMENT_SHADER, "shaders/pointlight.frag");
 
+	shaderText.init();
+	shaderText.loadShader(VSShaderLib::VERTEX_SHADER, "shaders/text.vert");
+	shaderText.loadShader(VSShaderLib::FRAGMENT_SHADER, "shaders/text.frag");
+	glLinkProgram(shaderText.getProgramIndex());
+	printf("InfoLog for Text Rendering Shader\n%s\n\n", shaderText.getAllInfoLogs().c_str());
+
 	// set semantics for the shader variables
 	glBindFragDataLocation(shader.getProgramIndex(), 0,"colorOut");
 	glBindAttribLocation(shader.getProgramIndex(), VERTEX_COORD_ATTRIB, "position");
@@ -1416,7 +1465,7 @@ GLuint setupShaders() {
 	
 	printf("InfoLog for MicroMachines Project\n%s\n\n", shader.getAllInfoLogs().c_str());
 	
-	return(shader.isProgramLinked());
+	return(shader.isProgramLinked() && shaderText.isProgramLinked());
 }
 
 // ------------------------------------------------------------
@@ -1438,6 +1487,7 @@ void init()
 	}
 	ilInit();
 
+	freeType_init(font_name);
 
 	glGenTextures(3, TextureArray);
 	Texture2D_Loader(TextureArray, "stone.tga", 0);
