@@ -365,7 +365,8 @@ void renderScene(void) {
 			float res2[4] = { 0.0,0.0,0.0,0.0 };
 			glUniform4fv(lStr_uniformId3, 1, res2);
 		}
-
+		
+		//fog flag
 		float res[4];
 		multMatrixPoint(VIEW, lightPos,res);   //lightPos definido em World Coord so is converted to eye space
 		glUniform4fv(lPos_uniformId, 1, res);
