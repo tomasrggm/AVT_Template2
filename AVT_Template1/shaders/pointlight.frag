@@ -19,6 +19,7 @@ float density = 0.05;
 uniform sampler2D texmap1;
 uniform sampler2D texmap2;
 uniform int texMode;
+uniform int fog;
 
 uniform vec4 luzDirectional;
 uniform vec4 luzDifusa;
@@ -110,5 +111,8 @@ void main() {
 	}
 
 	colorOut[3] = mat.diffuse.a; 
-	//colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
+	if(fog == 1){ 
+		colorOut = mix(vec4(fogColor,1.0), colorOut, visibility);
+	}
+	//apply fog
 }

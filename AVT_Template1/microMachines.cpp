@@ -42,6 +42,7 @@ int WinX = 640, WinY = 480;
 int lightFlag = 1; //directional
 int lightFlag2 = 1; //tudo o resto
 int lightFlag3 = 1; //holofotes
+int fogFlag = 1; //fog
 int cameraFlag = 1;
 float carX = 5.0f;
 float carY = 1.5f;
@@ -99,6 +100,7 @@ GLint lPos_uniformId8;
 
 GLint tex_loc, tex_loc1, tex_loc2;
 GLint texMode_uniformId;
+GLint fog_uniformId;
 
 GLuint TextureArray[3];
 	
@@ -364,6 +366,13 @@ void renderScene(void) {
 		else {
 			float res2[4] = { 0.0,0.0,0.0,0.0 };
 			glUniform4fv(lStr_uniformId3, 1, res2);
+		}
+
+		if (fogFlag == 1) {
+			glUniform1i(fog_uniformId, 1);
+		}
+		else {
+			glUniform1i(fog_uniformId, 0);
 		}
 		
 		//fog flag
@@ -1319,6 +1328,7 @@ void processKeys(unsigned char key, int xx, int yy)
 		case 'o': if (pauseFlag == 0) { angulo += 4; if (accelerationIncrement <= 0.02f) { accelerationIncrement += 0.01f; } } break; //Left
 		case 'p': if (pauseFlag == 0) { angulo -= 4; if (accelerationIncrement <= 0.02f) { accelerationIncrement += 0.01f; } } break; //Right
 		case 's': if (pauseFlag == 1) { pauseFlag = 0; } else{ pauseFlag = 1; } break;
+		case 'f': if (fogFlag == 1) { fogFlag = 0; } else { fogFlag = 1; } break;
 
 		//Light keys
 		case 'n': if (lightFlag == 1) { lightFlag = 0; } else { lightFlag = 1; } break; //Disable Directional light
@@ -1447,6 +1457,7 @@ GLuint setupShaders() {
 	glLinkProgram(shader.getProgramIndex());
 
 	texMode_uniformId = glGetUniformLocation(shader.getProgramIndex(), "texMode");
+	fog_uniformId = glGetUniformLocation(shader.getProgramIndex(), "fog");
 	pvm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_pvm");
 	vm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_viewModel");
 	normal_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_normal");
