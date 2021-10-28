@@ -58,6 +58,10 @@ float colisionBounce = 0.05f;
 
 float torusX[633];
 float torusZ[633];
+
+float torusXBackup[633];
+float torusZBackup[633];
+
 int renderedFlag = 0;
 int pauseFlag = 0;
 int vidas = 5;
@@ -140,14 +144,35 @@ void timer(int value)
 	
 }
 
+void restart() {
+	for (int i = 0; i < 4; i++) {
+		orangeX[i] = 0;
+		orangeZ[i] = (rand() % 100) - 45;
+		orangeSpeed[i] = 0;
+
+	}
+	carX = 5;
+	carZ = -48;
+	accelerationIncrement = 0;
+	vidas = 5;
+	angulo = 0;
+	for (int i = 0; i < 633; i++) {
+		torusX[i] = torusXBackup[i];
+		torusZ[i] = torusZBackup[i];
+	}
+}
+
 void colision(int value) {
 	if (pauseFlag == 0) {
 		for (int i = 0; i < 4; i++) {
-			if (carX > orangeX[i] - 1 && carX < orangeX[i] + 1 && carZ > orangeZ[i] - 1 && carZ < orangeZ[i] + 1) {
+			if (carX > orangeX[i] - 1 && carX < orangeX[i] + 1 && carZ > orangeZ[i] - 1 && carZ < orangeZ[i] + 1) { //Laranjas
 				carX = 5;
 				carZ = -48;
 				accelerationIncrement = 0;
 				vidas--;
+				if (vidas == 0) {
+					restart();
+				}
 			}
 		}
 
@@ -728,6 +753,8 @@ void renderScene(void) {
 	if (renderedFlag == 0) {
 		torusX[629] = 0.5f;
 		torusZ[629] = 0;
+		torusXBackup[629] = 0.5f;
+		torusZBackup[629] = 0;
 	}
 	translate(MODEL, torusX[629], 1.0f, torusX[629]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -764,6 +791,8 @@ void renderScene(void) {
 	if (renderedFlag == 0) {
 		torusX[630] = 4.5f;
 		torusZ[630] = 20.0f;
+		torusXBackup[630] = 4.5f;
+		torusZBackup[630] = 20.0f;
 	}
 	translate(MODEL, torusX[630], 1.0f, torusZ[630]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -800,6 +829,8 @@ void renderScene(void) {
 	if (renderedFlag == 0) {
 		torusX[631] = 4.5f;
 		torusZ[631] = -25.0f;
+		torusXBackup[631] = 4.5f;
+		torusZBackup[631] = -25.0f;
 	}
 	translate(MODEL, torusX[631], 1.0f, torusZ[631]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -836,6 +867,8 @@ void renderScene(void) {
 	if (renderedFlag == 0) {
 		torusX[632] = 0.5f;
 		torusZ[632] = -40.0f;
+		torusXBackup[632] = 0.5f;
+		torusZBackup[632] = -40.0f;
 	}
 	translate(MODEL, torusX[632], 1.0f, torusZ[632]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -877,6 +910,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 50] = 1.0f;
 			torusZ[i + 50] = 1.5f + i;
+			torusXBackup[i + 50] = 1.0f;
+			torusZBackup[i + 50] = 1.5f + i;
 		}
 		translate(MODEL, torusX[i + 50], 1.15f, torusZ[i + 50]);
 		// send matrices to OGL
@@ -916,6 +951,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 58 + 98] = 9.0f;
 			torusZ[i + 58 + 98] = 1.5f + i;
+			torusXBackup[i + 58 + 98] = 9.0f;
+			torusZBackup[i + 58 + 98] = 1.5f + i;
 		}
 		
 		translate(MODEL, torusX[i + 58 + 98], 1.15f, torusZ[i + 58 + 98]);
@@ -958,6 +995,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 50 + 213] = 0.0f + i;
 			torusZ[i + 50 + 213] = 57.5f;
+			torusXBackup[i + 50 + 213] = 0.0f + i;
+			torusZBackup[i + 50 + 213] = 57.5f;
 		}
 		translate(MODEL, torusX[i + 50 + 213], 1.15f, torusZ[i + 50 + 213]);
 		// send matrices to OGL
@@ -999,6 +1038,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 50 + 273] = 0.0f + i;
 			torusZ[i + 50 + 273] = -57.5f;
+			torusXBackup[i + 50 + 273] = 0.0f + i;
+			torusZBackup[i + 50 + 273] = -57.5f;
 		}
 		translate(MODEL, torusX[i + 50 + 273], 1.15f, torusZ[i + 50 + 273]);
 		// send matrices to OGL
@@ -1039,6 +1080,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 58 + 333] = -50.0f;
 			torusZ[i + 58 + 333] = 1.5f + i;
+			torusXBackup[i + 58 + 333] = -50.0f;
+			torusZBackup[i + 58 + 333] = 1.5f + i;
 		}
 		translate(MODEL, torusX[i + 58 + 333], 1.15f, torusZ[i + 58 + 333]);
 		// send matrices to OGL
@@ -1078,6 +1121,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 40 + 448] = 0 + i;
 			torusZ[i + 40 + 448] = -49.5f;
+			torusXBackup[i + 40 + 448] = 0 + i;
+			torusZBackup[i + 40 + 448] = -49.5f;
 		}
 		translate(MODEL, torusX[i + 40 + 448], 1.15f, torusZ[i + 40 + 448]);
 		// send matrices to OGL
@@ -1116,6 +1161,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 40 + 489] = 0 + i;
 			torusZ[i + 40 + 489] = 49.5f;
+			torusXBackup[i + 40 + 489] = 0 + i;
+			torusZBackup[i + 40 + 489] = 49.5f;
 		}
 		translate(MODEL, torusX[i + 40 + 489], 1.15f, torusZ[i + 40 + 489]);
 		// send matrices to OGL
@@ -1157,6 +1204,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 50 + 530] = -40;
 			torusZ[i + 50 + 530] = 1.5f + i;
+			torusXBackup[i + 50 + 530] = -40;
+			torusZBackup[i + 50 + 530] = 1.5f + i;
 		}
 		translate(MODEL, torusX[i + 50 + 530], 1.15f, torusZ[i + 50 + 530]);
 		// send matrices to OGL
@@ -1323,6 +1372,7 @@ void processKeys(unsigned char key, int xx, int yy)
 		case 'n': if (lightFlag == 1) { lightFlag = 0; } else { lightFlag = 1; } break; //Disable Directional light
 		case 'c': if (lightFlag2 == 1) { lightFlag2 = 0; } else { lightFlag2 = 1; } break; //Disable Candle lights
 		case 'h': if (lightFlag3 == 1) { lightFlag3 = 0; } else { lightFlag3 = 1; } break; //Disable Spotlight lights
+		case 'r': restart(); break;
 
 	}
 }
