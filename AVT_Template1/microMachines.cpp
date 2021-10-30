@@ -13,7 +13,7 @@
 #include <math.h>
 #include <iostream>
 #include <sstream>
-
+#include <fstream>
 #include <string>
 
 // include GLEW to access OpenGL 3.3 functions
@@ -22,8 +22,11 @@
 
 // GLUT is the toolkit to interface with the OS
 #include <GL/freeglut.h>
-
 #include <IL/il.h>
+
+// assimp include files. These three are usually needed.
+#include "assimp/Importer.hpp"	//OO version Header!
+#include "assimp/scene.h"
 
 // Use Very Simple Libs
 #include "VSShaderlib.h"
@@ -32,8 +35,19 @@
 #include "basic_geometry.h"
 #include "Texture_Loader.h"
 #include "avtFreeType.h"
+#include "meshFromAssimp.h"
+using namespace std;
 
 #define CAPTION "AVT MicroMachines Project - Delivery 1"
+
+// Created an instance of the Importer class in the meshFromAssimp.cpp file
+extern Assimp::Importer importer;
+// the global Assimp scene object
+extern const aiScene* scene;
+char model_dir[50];  //initialized by the user input at the console
+// scale factor for the Assimp model to fit in the window
+extern float scaleFactor;
+
 int WindowHandle = 0;
 int WinX = 640, WinY = 480;
 
@@ -68,7 +82,10 @@ unsigned int FrameCount = 0;
 
 VSShaderLib shader, shaderText;
 
+bool normalMapKey = TRUE; // by default if there is a normal map then bump effect is implemented. press key "b" to enable/disable normal mapping 
+
 struct MyMesh mesh[785];
+vector<struct MyMesh> myMeshes;
 int objId=0; //id of the object mesh - to be used as index of mesh: mesh[objID] means the current mesh
 
 
@@ -101,6 +118,10 @@ GLint lPos_uniformId8;
 GLint tex_loc, tex_loc1, tex_loc2;
 GLint texMode_uniformId;
 GLint fog_uniformId;
+
+GLint normalMap_loc;
+GLint specularMap_loc;
+GLint diffMapCount_loc;
 
 GLuint TextureArray[3];
 	
@@ -306,6 +327,108 @@ void changeSize(int w, int h) {
 // Render stufff
 //
 
+void aiRecursive_render(const aiScene* sc, const aiNode* nd)
+{
+	GLint loc;
+
+	// Get node transformation matrix
+	aiMatrix4x4 m = nd->mTransformation;
+	// OpenGL matrices are column major
+	m.Transpose();
+
+	// save model matrix and apply node transformation
+	pushMatrix(MODEL);
+
+	float aux[16];
+	memcpy(aux, &m, sizeof(float) * 16);
+	multMatrix(MODEL, aux);
+
+
+	// draw all meshes assigned to this node
+	for (unsigned int n = 0; n < nd->mNumMeshes; ++n) {
+
+
+		// send the material
+		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+		glUniform4fv(loc, 1, mesh[nd->mMeshes[n]].mat.ambient);
+		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+		glUniform4fv(loc, 1, mesh[nd->mMeshes[n]].mat.diffuse);
+		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+		glUniform4fv(loc, 1, mesh[nd->mMeshes[n]].mat.specular);
+		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.emissive");
+		glUniform4fv(loc, 1, mesh[nd->mMeshes[n]].mat.emissive);
+		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+		glUniform1f(loc, mesh[nd->mMeshes[n]].mat.shininess);
+		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.texCount");
+		glUniform1i(loc, mesh[nd->mMeshes[n]].mat.texCount);
+
+		unsigned int  diffMapCount = 0;  //read 2 diffuse textures
+
+		//devido ao fragment shader suporta 2 texturas difusas simultaneas, 1 especular e 1 normal map
+
+		glUniform1i(normalMap_loc, false);   //GLSL normalMap variable initialized to 0
+		glUniform1i(specularMap_loc, false);
+		glUniform1ui(diffMapCount_loc, 0);
+
+		if (mesh[nd->mMeshes[n]].mat.texCount != 0)
+			for (unsigned int i = 0; i < mesh[nd->mMeshes[n]].mat.texCount; ++i) {
+				if (mesh[nd->mMeshes[n]].texTypes[i] == DIFFUSE) {
+					if (diffMapCount == 0) {
+						diffMapCount++;
+						loc = glGetUniformLocation(shader.getProgramIndex(), "texUnitDiff");
+						glUniform1i(loc, mesh[nd->mMeshes[n]].texUnits[i]);
+						glUniform1ui(diffMapCount_loc, diffMapCount);
+					}
+					else if (diffMapCount == 1) {
+						diffMapCount++;
+						loc = glGetUniformLocation(shader.getProgramIndex(), "texUnitDiff1");
+						glUniform1i(loc, mesh[nd->mMeshes[n]].texUnits[i]);
+						glUniform1ui(diffMapCount_loc, diffMapCount);
+					}
+					else printf("Only supports a Material with a maximum of 2 diffuse textures\n");
+				}
+				else if (mesh[nd->mMeshes[n]].texTypes[i] == SPECULAR) {
+					loc = glGetUniformLocation(shader.getProgramIndex(), "texUnitSpec");
+					glUniform1i(loc, mesh[nd->mMeshes[n]].texUnits[i]);
+					glUniform1i(specularMap_loc, true);
+				}
+				else if (mesh[nd->mMeshes[n]].texTypes[i] == NORMALS) { //Normal map
+					loc = glGetUniformLocation(shader.getProgramIndex(), "texUnitNormalMap");
+					if (normalMapKey)
+						glUniform1i(normalMap_loc, normalMapKey);
+					glUniform1i(loc, mesh[nd->mMeshes[n]].texUnits[i]);
+
+				}
+				else printf("Texture Map not supported\n");
+			}
+
+		// send matrices to OGL
+		computeDerivedMatrix(PROJ_VIEW_MODEL);
+		glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+		glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+		computeNormalMatrix3x3();
+		glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+		// bind VAO
+		glBindVertexArray(mesh[nd->mMeshes[n]].vao);
+
+		if (!shader.isProgramValid()) {
+			printf("Program Not Valid!\n");
+			exit(1);
+		}
+		// draw
+		glDrawElements(mesh[nd->mMeshes[n]].type, mesh[nd->mMeshes[n]].numIndexes, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+	}
+
+	// draw all children
+	for (unsigned int n = 0; n < nd->mNumChildren; ++n) {
+		aiRecursive_render(sc, nd->mChildren[n]);
+	}
+	popMatrix(MODEL);
+}
+
+
 void renderScene(void) {
 	
 	GLint loc;
@@ -368,6 +491,7 @@ void renderScene(void) {
 			glUniform4fv(lStr_uniformId3, 1, res2);
 		}
 
+		//fog flag
 		if (fogFlag == 1) {
 			glUniform1i(fog_uniformId, 1);
 		}
@@ -375,7 +499,6 @@ void renderScene(void) {
 			glUniform1i(fog_uniformId, 0);
 		}
 		
-		//fog flag
 		float res[4];
 		multMatrixPoint(VIEW, lightPos,res);   //lightPos definido em World Coord so is converted to eye space
 		glUniform4fv(lPos_uniformId, 1, res);
@@ -471,22 +594,24 @@ void renderScene(void) {
 
 	//CARRO
 	objId = 1;
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	/*loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
 	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
 	glUniform4fv(loc, 1, mesh[objId].mat.specular);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
+	glUniform1f(loc, mesh[objId].mat.shininess);*/
 	pushMatrix(MODEL);
 	
 	translate(MODEL, carX, carY, carZ);
 	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, angulo, 0, 0, 1.0f);
 
+	aiRecursive_render(scene, scene->mRootNode);
+
 	// send matrices to OGL
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	/*computeDerivedMatrix(PROJ_VIEW_MODEL);
 	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
 	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
 	computeNormalMatrix3x3();
@@ -500,7 +625,7 @@ void renderScene(void) {
 		exit(1);
 	}
 	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
+	glBindVertexArray(0);*/
 
 	popMatrix(MODEL);
 
@@ -1453,6 +1578,8 @@ GLuint setupShaders() {
 	glBindAttribLocation(shader.getProgramIndex(), VERTEX_COORD_ATTRIB, "position");
 	glBindAttribLocation(shader.getProgramIndex(), NORMAL_ATTRIB, "normal");
 	glBindAttribLocation(shader.getProgramIndex(), TEXTURE_COORD_ATTRIB, "texCoord");
+	glBindAttribLocation(shader.getProgramIndex(), TANGENT_ATTRIB, "tangent");
+	glBindAttribLocation(shader.getProgramIndex(), BITANGENT_ATTRIB, "bitangent");
 
 	glLinkProgram(shader.getProgramIndex());
 
@@ -1473,6 +1600,10 @@ GLuint setupShaders() {
 	tex_loc = glGetUniformLocation(shader.getProgramIndex(), "texmap");
 	tex_loc1 = glGetUniformLocation(shader.getProgramIndex(), "texmap1");
 	tex_loc2 = glGetUniformLocation(shader.getProgramIndex(), "texmap2");
+	normalMap_loc = glGetUniformLocation(shader.getProgramIndex(), "normalMap");
+	specularMap_loc = glGetUniformLocation(shader.getProgramIndex(), "specularMap");
+	diffMapCount_loc = glGetUniformLocation(shader.getProgramIndex(), "diffMapCount");
+
 
 	
 	printf("InfoLog for MicroMachines Project\n%s\n\n", shader.getAllInfoLogs().c_str());
@@ -1505,6 +1636,7 @@ void init()
 	Texture2D_Loader(TextureArray, "stone.tga", 0);
 	Texture2D_Loader(TextureArray, "table-cloth3.jpg", 1);
 	Texture2D_Loader(TextureArray, "cloth2.jpg", 2);
+	Import3DFromFile("spider/spider.obj");
 
 	
 	//Cream
@@ -1554,13 +1686,8 @@ void init()
 
 	//CARRO
 	objId = 1;
-	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
-	mesh[objId].mat.shininess = shininess;
-	mesh[objId].mat.texCount = texcount;
-	createCylinder(1.0f,0.3f,64);
+	//creation of Mymesh array with VAO Geometry and Material
+	 myMeshes = createMeshFromAssimp(scene);
 
 	//RODAS
 	objId = 2;
