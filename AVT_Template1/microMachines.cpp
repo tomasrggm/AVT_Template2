@@ -33,8 +33,9 @@
 #include "Texture_Loader.h"
 #include "avtFreeType.h"
 #include "microMachines.h"
+#include "l3dBillboard.h"
 
-#define CAPTION "AVT MicroMachines Project - Delivery 1"
+#define CAPTION "AVT MicroMachines Project - Delivery 2"
 int WindowHandle = 0;
 int WinX = 640, WinY = 480;
 int useTeacherKeys = 0; //By default, use keys as defined by the teacher
@@ -57,6 +58,7 @@ float orangeX[4] = { 0,0,0,0 };
 float orangeZ[4] = { (rand() % 100) - 45, (rand() % 100) - 45, (rand() % 100) - 45, (rand() % 100) - 45 };
 float orangeSpeed[4] = { 0, 0, 0, 0 };
 float colisionBounce = 0.05f;
+int billboardType = 1; //By default, it starts on cheated cylindrical
 
 float torusX[633];
 float torusZ[633];
@@ -249,7 +251,6 @@ void movementOrange(int value) {
 
 		for (int i = 0; i < 4; i++) {
 			orangeSpeed[i] += 0.005f * (i + 1) * deltaTime;
-			printf("orangeSpeed %f\n", orangeSpeed[i]);
 
 			orangeX[i] += orangeSpeed[i];
 			if (orangeX[i] > 50) {
@@ -467,7 +468,7 @@ void renderScene(void) {
 	glBindVertexArray(0);
 
 	popMatrix(MODEL);
-	glUniform1i(texMode_uniformId, 1);
+	glUniform1i(texMode_uniformId, 2);
 
 
 	//CARRO
@@ -1190,12 +1191,76 @@ void renderScene(void) {
 		objId++;
 	}
 
-	//Transparency
+	//Enable blending
 	glEnable(GL_BLEND);
+
+	//TREE BILLBOARDS
+	//Despite of blending, they are considered opaque so z-buffer works normally
+
+	float pos[3]; 
+	float cam[3] = { camX, camY, camZ };
+	objId = 782;
+	for (int i = -5; i < 5; i++) {
+		for (int j = -5; j < 5; j++) {
+			pushMatrix(MODEL);
+			translate(MODEL, 5 + i * 10.0, 0, 5 + j * 10.0);
+
+			pos[0] = 5 + i * 10.0; pos[1] = 0; pos[2] = 5 + j * 10.0;
+
+			if (billboardType == 2)
+				l3dBillboardSphericalBegin(cam, pos);
+			else if (billboardType == 3)
+				l3dBillboardCylindricalBegin(cam, pos);
+
+			//diffuse and ambient color are not used in the tree quads
+			loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+			glUniform4fv(loc, 1, mesh[objId].mat.specular);
+			loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+			glUniform1f(loc, mesh[objId].mat.shininess);
+
+			pushMatrix(MODEL);
+			translate(MODEL, 0.0, 3.0, 0.0f);
+
+			// send matrices to OGL
+			if (billboardType == 0 || billboardType == 1) {     //Cheating matrix reset billboard techniques
+				computeDerivedMatrix(VIEW_MODEL);
+
+				//reset VIEW_MODEL
+				if (billboardType == 0) BillboardCheatSphericalBegin();
+				else BillboardCheatCylindricalBegin();
+
+				computeDerivedMatrix_PVM(); // calculate PROJ_VIEW_MODEL
+			}
+			else computeDerivedMatrix(PROJ_VIEW_MODEL);
+
+			// send matrices to OGL
+			glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+			glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+			computeNormalMatrix3x3();
+			glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+			// Render mesh
+			glUniform1i(texMode_uniformId, 1); // linha da textura
+			glBindVertexArray(mesh[objId].vao);
+
+			if (!shader.isProgramValid()) {
+				printf("Program Not Valid!\n");
+				exit(1);
+			}
+			glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
+
+			popMatrix(MODEL);
+			popMatrix(MODEL);
+			glUniform1i(texMode_uniformId, 2);
+		}
+	}
+
+	//Make Z-buffer read-only
 	glDepthMask(GL_FALSE);
 	
 	//VIDRO DO CARRO
-	objId = 782;
+	objId = 783;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
@@ -1231,7 +1296,7 @@ void renderScene(void) {
 	popMatrix(MODEL);
 
 	//VIDRO NA PISTA
-	objId = 783;
+	objId = 784;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
@@ -1338,6 +1403,15 @@ void processKeys(unsigned char key, int xx, int yy) {
 				else { lightFlag2 = 1; } break; //Disable Candle lights
 		case 'h': if (lightFlag3 == 1) { lightFlag3 = 0; }
 				else { lightFlag3 = 1; } break; //Disable Spotlight lights
+		
+		case 'b': billboardType++; if (billboardType == 5) billboardType = 0;
+			switch (billboardType) {
+			case 0: printf("Cheating Spherical (matrix reset)\n"); break;
+			case 1: printf("Cheating Cylindrical (matrix reset)\n"); break;
+			case 2: printf("True Spherical\n"); break;
+			case 3: printf("True Cylindrical\n"); break;
+			case 4: printf("No billboarding\n"); break;
+			}
 		}
 	}
 	else {
@@ -1372,6 +1446,15 @@ void processKeys(unsigned char key, int xx, int yy) {
 				else { lightFlag2 = 1; } break; //Disable Candle lights
 		case 'h': if (lightFlag3 == 1) { lightFlag3 = 0; }
 				else { lightFlag3 = 1; } break; //Disable Spotlight lights
+		
+		case 'b': billboardType++; if (billboardType == 5) billboardType = 0;
+			switch (billboardType) {
+			case 0: printf("Cheating Spherical (matrix reset)\n"); break;
+			case 1: printf("Cheating Cylindrical (matrix reset)\n"); break;
+			case 2: printf("True Spherical\n"); break;
+			case 3: printf("True Cylindrical\n"); break;
+			case 4: printf("No billboarding\n"); break;
+			}
 		}
 	}
 }
@@ -1539,7 +1622,7 @@ void init()
 	freeType_init(font_name);
 
 	glGenTextures(3, TextureArray);
-	Texture2D_Loader(TextureArray, "stone.tga", 0);
+	Texture2D_Loader(TextureArray, "tree.tga", 0);
 	Texture2D_Loader(TextureArray, "table-cloth3.jpg", 1);
 	Texture2D_Loader(TextureArray, "cloth2.jpg", 2);
 
@@ -1577,6 +1660,10 @@ void init()
 	float amb5[] = { 0.0f, 0.3f, 0.0f, 1.0f };
 	float diff5[] = { 0.0f, 0.3f, 0.0f, 1.0f };
 	float spec5[] = { 0.9f, 0.9f, 0.9f, 1.0f };
+
+	//Tree specular color
+	float tree_spec[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+	float tree_shininess = 10.0f;
 
 
 	//MESA
@@ -1773,8 +1860,18 @@ void init()
 		objId++;
 	}
 
-	//VIDRO DO CARRO
+	//TREE BILLBOARDS
 	objId = 782;
+	//memcpy(mesh[objId].mat.ambient, amb4, 4 * sizeof(float));
+	//memcpy(mesh[objId].mat.diffuse, diff4, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, tree_spec, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
+	mesh[objId].mat.shininess = tree_shininess;
+	mesh[objId].mat.texCount = texcount;
+	createQuad(6.0, 6.0);
+
+	//VIDRO DO CARRO
+	objId = 783;
 	memcpy(mesh[objId].mat.ambient, amb4, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.diffuse, diff4, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.specular, spec4, 4 * sizeof(float));
@@ -1785,7 +1882,7 @@ void init()
 
 	//VIDRO NA PISTA
 	diff1[3] = 0.5f;
-	objId = 783;
+	objId = 784;
 	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.specular, spec1, 4 * sizeof(float));

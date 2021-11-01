@@ -16,8 +16,9 @@ vec4 l_spotDir = vec4(0.0,0.0,-1.0,1.0);
 
 float density = 0.05;
 
-uniform sampler2D texmap1;
-uniform sampler2D texmap2;
+uniform sampler2D texmap; //tree
+uniform sampler2D texmap1; //table-cloth
+uniform sampler2D texmap2; //cloth
 uniform int texMode;
 
 uniform vec4 luzDirectional;
@@ -39,6 +40,7 @@ void main() {
 	vec4 accumulatedValue = vec4(0.0);
 	vec4 texel = vec4(0.0);
 	vec4 texel1 = vec4(0.0);
+	vec4 texel2 = vec4(0.0);
 
 	for(int i = 0; i < 8; ++i) {
 		if(i < 6) {
@@ -55,9 +57,17 @@ void main() {
 				float intSpec = max(dot(h,n), 0.0);
 				spec = mat.specular * pow(intSpec, mat.shininess);
 				if(texMode == 0) {
-					texel = texture(texmap2, DataIn[i].tex_coord);
 					texel1 = texture(texmap1, DataIn[i].tex_coord);
-					accumulatedValue +=(spec + intensity*mat.diffuse*texel*texel1)* luzDifusa;
+					texel2 = texture(texmap2, DataIn[i].tex_coord);
+					accumulatedValue +=(spec + intensity*mat.diffuse*texel1*texel2)* luzDifusa;
+				}
+				else if(texMode == 1) {
+					texel = texture(texmap, DataIn[i].tex_coord);
+					if(texel.a == 0.0) discard;
+					else {
+						accumulatedValue += (spec + intensity*mat.diffuse*texel) * luzDifusa;
+						accumulatedValue[3] += texel.a;
+					}
 				}
 				else {
 					accumulatedValue +=(spec + intensity*mat.diffuse)* luzDifusa;
@@ -79,9 +89,17 @@ void main() {
 					float intSpec = max(dot(h,n), 0.0);
 					spec = mat.specular * pow(intSpec, mat.shininess);
 					if(texMode == 0) {
-						texel = texture(texmap2, DataIn[i].tex_coord);
 						texel1 = texture(texmap1, DataIn[i].tex_coord);
-						accumulatedValue += (spec + intensity*mat.diffuse*texel*texel1) * luzHolofote;
+						texel2 = texture(texmap2, DataIn[i].tex_coord);
+						accumulatedValue += (spec + intensity*mat.diffuse*texel1*texel2) * luzHolofote;
+					}
+					else if(texMode == 1) {
+						texel = texture(texmap, DataIn[i].tex_coord);
+						if(texel.a == 0.0) discard;
+						else {
+							accumulatedValue += (spec + intensity*mat.diffuse*texel) * luzHolofote;
+							accumulatedValue[3] += texel.a;
+						}
 					}
 					else {
 						accumulatedValue += (spec + intensity*mat.diffuse) * luzHolofote;
@@ -101,14 +119,21 @@ void main() {
 	float visibility = exp(-distance*density); //fog function
 	//visibility = clamp(visibility, 0.0, 1.0);
 
-	if(texMode == 0) { //Ensure directional light applies to the textures
-		colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel * texel1);
+	if(texMode == 0) { //Ensure directional light applies to the table textures
+		colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel1 * texel2);
+		colorOut[3] = mat.diffuse.a;
+	}
+
+	else if(texMode == 1) { //Ensure directional light applies to the tree billboards
+		if(texel.a == 0.0) discard;
+		colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel);
+		colorOut[3] = texel.a;
 	}
 
 	else {
 		colorOut = max(accumulatedValue , mat.ambient * luzDirectional);
+		colorOut[3] = mat.diffuse.a; 
 	}
 
-	colorOut[3] = mat.diffuse.a; 
 	colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
 }
