@@ -36,6 +36,7 @@
 #include "Texture_Loader.h"
 #include "avtFreeType.h"
 #include "meshFromAssimp.h"
+#include "l3DBillboard.h"
 using namespace std;
 
 #define CAPTION "AVT MicroMachines Project - Delivery 1"
@@ -124,7 +125,7 @@ GLint lDir_uniformId;
 GLint lAngle_uniformId;
 GLint lPos_uniformId8;
 
-GLint tex_loc, tex_loc1, tex_loc2;
+GLint tex_loc, tex_loc1, tex_loc2, tex_loc3;
 GLint texMode_uniformId;
 GLint fog_uniformId;
 
@@ -132,7 +133,7 @@ GLint normalMap_loc;
 GLint specularMap_loc;
 GLint diffMapCount_loc;
 
-GLuint TextureArray[3];
+GLuint TextureArray[4];
 	
 // Camera Position
 float camX, camY, camZ;
@@ -637,9 +638,13 @@ void renderScene(void) {
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
 
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[3]);
+
 		glUniform1i(tex_loc, 0);
 		glUniform1i(tex_loc1, 1);
 		glUniform1i(tex_loc2, 2);
+		glUniform1i(tex_loc3, 3);
 
 	//MESA
 	objId = 0;
@@ -1545,16 +1550,14 @@ void renderScene(void) {
 		updateParticles();
 
 		// draw fireworks particles
-		objId = 784;  //quad for particle
-
-		glBindTexture(GL_TEXTURE_2D, TextureArray[0]); //particle.tga associated to TU0 
+		objId = 785;  //quad for particle
 
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glDepthMask(GL_FALSE);  //Depth Buffer Read Only
 
-		glUniform1i(texMode_uniformId, 2); // draw modulated textured particles 
+		glUniform1i(texMode_uniformId, 3); // draw modulated textured particles 
 
 		for (int i = 0; i < MAX_PARTICULAS; i++)
 		{
@@ -1599,6 +1602,8 @@ void renderScene(void) {
 		}
 
 	}
+
+	glUniform1i(texMode_uniformId, 0);
 
 	glDisable(GL_BLEND);
 	glDepthMask(GL_TRUE);
@@ -1684,6 +1689,11 @@ void processKeys(unsigned char key, int xx, int yy) {
 			case 3: printf("True Cylindrical\n"); break;
 			case 4: printf("No billboarding\n"); break;
 			}
+
+		case 'e': fireworks = 1; iniParticles(); break;
+
+		case 'f': if (fogFlag == 1) { fogFlag = 0; }
+				else { fogFlag = 1; } break;
 		}
 	}
 	else {
@@ -1727,6 +1737,12 @@ void processKeys(unsigned char key, int xx, int yy) {
 			case 3: printf("True Cylindrical\n"); break;
 			case 4: printf("No billboarding\n"); break;
 			}
+		
+		case 'e': fireworks = 1; iniParticles(); break;
+
+		case 'f': if (fogFlag == 1) { fogFlag = 0; }
+				else { fogFlag = 1; } break;
+
 		}
 	}
 }
@@ -1868,6 +1884,7 @@ GLuint setupShaders() {
 	tex_loc = glGetUniformLocation(shader.getProgramIndex(), "texmap");
 	tex_loc1 = glGetUniformLocation(shader.getProgramIndex(), "texmap1");
 	tex_loc2 = glGetUniformLocation(shader.getProgramIndex(), "texmap2");
+	tex_loc3 = glGetUniformLocation(shader.getProgramIndex(), "texmap3");
 	normalMap_loc = glGetUniformLocation(shader.getProgramIndex(), "normalMap");
 	specularMap_loc = glGetUniformLocation(shader.getProgramIndex(), "specularMap");
 	diffMapCount_loc = glGetUniformLocation(shader.getProgramIndex(), "diffMapCount");
@@ -1900,11 +1917,11 @@ void init()
 
 	freeType_init(font_name);
 
-	glGenTextures(3, TextureArray);
+	glGenTextures(4, TextureArray);
 	Texture2D_Loader(TextureArray, "tree.tga", 0);
-	Texture2D_Loader(TextureArray, "particle.tga", 0);
 	Texture2D_Loader(TextureArray, "table-cloth3.jpg", 1);
 	Texture2D_Loader(TextureArray, "cloth2.jpg", 2);
+	Texture2D_Loader(TextureArray, "particle.tga", 3);
 	Import3DFromFile("spider/spider.obj");
 
 	
@@ -2176,7 +2193,7 @@ void init()
 	diff1[3] = 1.0f;
 
 	//PARTICULAS
-	objId = 784;
+	objId = 785;
 	mesh[objId].mat.texCount = texcount;
 	createQuad(2, 2);
 

@@ -19,6 +19,7 @@ float density = 0.05;
 uniform sampler2D texmap; //tree
 uniform sampler2D texmap1; //table-cloth
 uniform sampler2D texmap2; //cloth
+uniform sampler2D texmap3; //fireworks
 uniform int texMode;
 uniform int fog;
 
@@ -42,6 +43,7 @@ void main() {
 	vec4 texel = vec4(0.0);
 	vec4 texel1 = vec4(0.0);
 	vec4 texel2 = vec4(0.0);
+	vec4 texel3 = vec4(0.0);
 
 	for(int i = 0; i < 8; ++i) {
 		if(i < 6) {
@@ -70,6 +72,10 @@ void main() {
 						accumulatedValue[3] += texel.a;
 					}
 				}
+				else if(texMode == 3) {
+						texel3 = texture(texmap3, DataIn[i].tex_coord);
+						accumulatedValue += (spec + intensity*mat.diffuse*texel3) * luzDifusa;
+					}
 				else {
 					accumulatedValue +=(spec + intensity*mat.diffuse)* luzDifusa;
 				}
@@ -101,6 +107,10 @@ void main() {
 							accumulatedValue += (spec + intensity*mat.diffuse*texel) * luzHolofote;
 							accumulatedValue[3] += texel.a;
 						}
+					}
+					else if(texMode == 3) {
+						texel3 = texture(texmap3, DataIn[i].tex_coord);
+						accumulatedValue += (spec + intensity*mat.diffuse*texel3) * luzHolofote;
 					}
 					else {
 						accumulatedValue += (spec + intensity*mat.diffuse) * luzHolofote;
@@ -151,13 +161,17 @@ void main() {
 		}
 	}
 
+	else if(texMode == 3) { //Ensure directional light applies to the fireworks
+		colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel3);
+	}
+
 	else {
 		colorOut = max(accumulatedValue , mat.ambient * luzDirectional);
 	}
 
+	//apply fog
 	colorOut[3] = mat.diffuse.a; 
 	if(fog == 1){ 
 		colorOut = mix(vec4(fogColor,1.0), colorOut, visibility);
 	}
-	//apply fog
 }
