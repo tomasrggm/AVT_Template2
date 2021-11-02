@@ -56,12 +56,12 @@ void main() {
 				vec3 h = normalize(l + e);
 				float intSpec = max(dot(h,n), 0.0);
 				spec = mat.specular * pow(intSpec, mat.shininess);
-				if(texMode == 0) {
+				if(texMode == 1) {
 					texel1 = texture(texmap1, DataIn[i].tex_coord);
 					texel2 = texture(texmap2, DataIn[i].tex_coord);
 					accumulatedValue +=(spec + intensity*mat.diffuse*texel1*texel2)* luzDifusa;
 				}
-				else if(texMode == 1) {
+				else if(texMode == 2) {
 					texel = texture(texmap, DataIn[i].tex_coord);
 					if(texel.a == 0.0) discard;
 					else {
@@ -88,12 +88,12 @@ void main() {
 					vec3 h = normalize(ld + eye);
 					float intSpec = max(dot(h,n), 0.0);
 					spec = mat.specular * pow(intSpec, mat.shininess);
-					if(texMode == 0) {
+					if(texMode == 1) {
 						texel1 = texture(texmap1, DataIn[i].tex_coord);
 						texel2 = texture(texmap2, DataIn[i].tex_coord);
 						accumulatedValue += (spec + intensity*mat.diffuse*texel1*texel2) * luzHolofote;
 					}
-					else if(texMode == 1) {
+					else if(texMode == 2) {
 						texel = texture(texmap, DataIn[i].tex_coord);
 						if(texel.a == 0.0) discard;
 						else {
@@ -105,6 +105,24 @@ void main() {
 						accumulatedValue += (spec + intensity*mat.diffuse) * luzHolofote;
 					}
 					
+				}
+			}
+			else {
+				vec3 n = normalize(DataIn[i].normal);
+				intensity = max(dot(n,ld), 0.0);
+				if (intensity > 0.0) {
+					vec3 eye = normalize(DataIn[i].eye);
+					vec3 h = normalize(ld + eye);
+					float intSpec = max(dot(h,n), 0.0);
+					spec = mat.specular * pow(intSpec, mat.shininess);
+					if(texMode == 2) {
+						texel = texture(texmap, DataIn[i].tex_coord);
+						if(texel.a == 0.0) discard;
+						else {
+							accumulatedValue += (spec + intensity*mat.diffuse*texel) * luzHolofote;
+							accumulatedValue[3] += texel.a;
+						}
+					}
 				}
 			}
 		}
@@ -119,15 +137,17 @@ void main() {
 	float visibility = exp(-distance*density); //fog function
 	//visibility = clamp(visibility, 0.0, 1.0);
 
-	if(texMode == 0) { //Ensure directional light applies to the table textures
+	if(texMode == 1) { //Ensure directional light applies to the table textures
 		colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel1 * texel2);
 		colorOut[3] = mat.diffuse.a;
 	}
 
-	else if(texMode == 1) { //Ensure directional light applies to the tree billboards
+	else if(texMode == 2) { //Ensure directional light applies to the tree billboards
 		if(texel.a == 0.0) discard;
-		colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel);
-		colorOut[3] = texel.a;
+		else {
+			colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel);
+			colorOut[3] = texel.a;
+		}
 	}
 
 	else {

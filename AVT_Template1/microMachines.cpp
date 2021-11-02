@@ -457,7 +457,7 @@ void renderScene(void) {
 	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
 
 	// Render mesh
-	glUniform1i(texMode_uniformId, 0); // linha da textura
+	glUniform1i(texMode_uniformId, 1); // linha da textura
 	glBindVertexArray(mesh[objId].vao);
 
 	if (!shader.isProgramValid()) {
@@ -468,7 +468,7 @@ void renderScene(void) {
 	glBindVertexArray(0);
 
 	popMatrix(MODEL);
-	glUniform1i(texMode_uniformId, 2);
+	glUniform1i(texMode_uniformId, 0);
 
 
 	//CARRO
@@ -1240,7 +1240,7 @@ void renderScene(void) {
 			glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
 
 			// Render mesh
-			glUniform1i(texMode_uniformId, 1); // linha da textura
+			glUniform1i(texMode_uniformId, 2); // linha da textura
 			glBindVertexArray(mesh[objId].vao);
 
 			if (!shader.isProgramValid()) {
@@ -1252,7 +1252,7 @@ void renderScene(void) {
 
 			popMatrix(MODEL);
 			popMatrix(MODEL);
-			glUniform1i(texMode_uniformId, 2);
+			glUniform1i(texMode_uniformId, 0);
 		}
 	}
 
