@@ -1,5 +1,8 @@
 
-#define MAX_TEXTURES 4
+#define MAX_TEXTURES 8
+
+enum texType { DIFFUSE, SPECULAR, NORMALS, BUMP };
+
 
 struct Material{
 	float diffuse[4];

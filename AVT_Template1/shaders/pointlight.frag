@@ -20,6 +20,7 @@ uniform sampler2D texmap; //tree
 uniform sampler2D texmap1; //table-cloth
 uniform sampler2D texmap2; //cloth
 uniform int texMode;
+uniform int fog;
 
 uniform vec4 luzDirectional;
 uniform vec4 luzDifusa;
@@ -152,8 +153,11 @@ void main() {
 
 	else {
 		colorOut = max(accumulatedValue , mat.ambient * luzDirectional);
-		colorOut[3] = mat.diffuse.a; 
 	}
 
-	colorOut = mix(vec4(fogColor,1.0), colorOut, visibility); //apply fog
+	colorOut[3] = mat.diffuse.a; 
+	if(fog == 1){ 
+		colorOut = mix(vec4(fogColor,1.0), colorOut, visibility);
+	}
+	//apply fog
 }

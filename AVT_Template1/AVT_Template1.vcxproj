@@ -161,6 +161,7 @@
     <ClCompile Include="AVTmathLib.cpp" />
     <ClCompile Include="basic_geometry.cpp" />
     <ClCompile Include="l3dBillboard.cpp" />
+    <ClCompile Include="meshFromAssimp.cpp" />
     <ClCompile Include="microMachines.cpp" />
     <ClCompile Include="Texture_Loader.cpp" />
     <ClCompile Include="vsShaderLib.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="cube.h" />
     <ClInclude Include="l3DBillboard.h" />
     <ClInclude Include="microMachines.h" />
+    <ClInclude Include="meshFromAssimp.h" />
     <ClInclude Include="Texture_Loader.h" />
     <ClInclude Include="VertexAttrDef.h" />
     <ClInclude Include="vsShaderLib.h" />
