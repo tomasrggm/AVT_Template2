@@ -40,6 +40,10 @@ using namespace std;
 
 #define CAPTION "AVT MicroMachines Project - Delivery 1"
 
+#define frand()			((float)rand()/RAND_MAX)
+#define M_PI			3.14159265
+#define MAX_PARTICULAS  1500
+
 // Created an instance of the Importer class in the meshFromAssimp.cpp file
 extern Assimp::Importer importer;
 // the global Assimp scene object
@@ -84,7 +88,7 @@ VSShaderLib shader, shaderText;
 
 bool normalMapKey = TRUE; // by default if there is a normal map then bump effect is implemented. press key "b" to enable/disable normal mapping 
 
-struct MyMesh mesh[785];
+struct MyMesh mesh[786];
 vector<struct MyMesh> myMeshes;
 int objId=0; //id of the object mesh - to be used as index of mesh: mesh[objID] means the current mesh
 
@@ -135,6 +139,21 @@ int startX, startY, tracking = 0;
 float alpha = 39.0f, beta = 51.0f;
 float r = 5.0f;
 
+//Particles fireworks
+int fireworks = 0;
+
+typedef struct {
+	float	life;		// vida
+	float	fade;		// fade
+	float	r, g, b;    // color
+	GLfloat x, y, z;    // posição
+	GLfloat vx, vy, vz; // velocidade 
+	GLfloat ax, ay, az; // aceleração
+} Particle;
+
+Particle particula[MAX_PARTICULAS];
+int dead_num_particles = 0;
+
 // Frame counting and FPS computation
 long myTime,timebase = 0,frame = 0;
 char s[32];
@@ -161,6 +180,62 @@ void timer(int value)
     FrameCount = 0;
     glutTimerFunc(1000, timer, 0);
 	
+}
+
+void updateParticles()
+{
+	int i;
+	float h;
+
+	/* MÈtodo de Euler de integraÁ„o de eq. diferenciais ordin·rias
+	h representa o step de tempo; dv/dt = a; dx/dt = v; e conhecem-se os valores iniciais de x e v */
+
+	//h = 0.125f;
+	h = 0.033;
+	if (fireworks) {
+
+		for (i = 0; i < MAX_PARTICULAS; i++)
+		{
+			particula[i].x += (h * particula[i].vx);
+			particula[i].y += (h * particula[i].vy);
+			particula[i].z += (h * particula[i].vz);
+			particula[i].vx += (h * particula[i].ax);
+			particula[i].vy += (h * particula[i].ay);
+			particula[i].vz += (h * particula[i].az);
+			particula[i].life -= particula[i].fade;
+		}
+	}
+}
+
+void iniParticles(void)
+{
+	GLfloat v, theta, phi;
+	int i;
+
+	for (i = 0; i < MAX_PARTICULAS; i++)
+	{
+		v = 0.8 * frand() + 0.2;
+		phi = frand() * M_PI;
+		theta = 2.0 * frand() * M_PI;
+
+		particula[i].x = 0.0f;
+		particula[i].y = 10.0f;
+		particula[i].z = 0.0f;
+		particula[i].vx = v * cos(theta) * sin(phi);
+		particula[i].vy = v * cos(phi);
+		particula[i].vz = v * sin(theta) * sin(phi);
+		particula[i].ax = 0.1f; /* simular um pouco de vento */
+		particula[i].ay = -0.15f; /* simular a aceleraÁ„o da gravidade */
+		particula[i].az = 0.0f;
+
+		/* tom amarelado que vai ser multiplicado pela textura que varia entre branco e preto */
+		particula[i].r = 0.882f;
+		particula[i].g = 0.552f;
+		particula[i].b = 0.211f;
+
+		particula[i].life = 1.0f;		/* vida inicial */
+		particula[i].fade = 0.0025f;	    /* step de decrÈscimo da vida para cada iteraÁ„o */
+	}
 }
 
 void colision(int value) {
@@ -434,6 +509,9 @@ void renderScene(void) {
 	GLint loc;
 
 	FrameCount++;
+
+	float particle_color[4];
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	// load identity matrices
 	loadIdentity(VIEW);
@@ -594,24 +672,24 @@ void renderScene(void) {
 
 	//CARRO
 	objId = 1;
-	/*loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
 	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
 	glUniform4fv(loc, 1, mesh[objId].mat.specular);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);*/
+	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 	
 	translate(MODEL, carX, carY, carZ);
 	rotate(MODEL, -90, 1.0f, 0, 0);
 	rotate(MODEL, angulo, 0, 0, 1.0f);
 
-	aiRecursive_render(scene, scene->mRootNode);
+	//aiRecursive_render(scene, scene->mRootNode);
 
 	// send matrices to OGL
-	/*computeDerivedMatrix(PROJ_VIEW_MODEL);
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
 	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
 	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
 	computeNormalMatrix3x3();
@@ -625,7 +703,7 @@ void renderScene(void) {
 		exit(1);
 	}
 	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);*/
+	glBindVertexArray(0);
 
 	popMatrix(MODEL);
 
@@ -1387,6 +1465,67 @@ void renderScene(void) {
 	glBindVertexArray(0);
 
 	popMatrix(MODEL);
+
+	if (fireworks) {
+
+		updateParticles();
+
+		// draw fireworks particles
+		objId = 784;  //quad for particle
+
+		glBindTexture(GL_TEXTURE_2D, TextureArray[0]); //particle.tga associated to TU0 
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		glDepthMask(GL_FALSE);  //Depth Buffer Read Only
+
+		glUniform1i(texMode_uniformId, 2); // draw modulated textured particles 
+
+		for (int i = 0; i < MAX_PARTICULAS; i++)
+		{
+			if (particula[i].life > 0.0f) /* sÛ desenha as que ainda est„o vivas */
+			{
+
+				/* A vida da partÌcula representa o canal alpha da cor. Como o blend est· activo a cor final È a soma da cor rgb do fragmento multiplicada pelo
+				alpha com a cor do pixel destino */
+
+				particle_color[0] = particula[i].r;
+				particle_color[1] = particula[i].g;
+				particle_color[2] = particula[i].b;
+				particle_color[3] = particula[i].life;
+
+				// send the material - diffuse color modulated with texture
+				loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+				glUniform4fv(loc, 1, particle_color);
+
+				pushMatrix(MODEL);
+				translate(MODEL, particula[i].x, particula[i].y, particula[i].z);
+
+				// send matrices to OGL
+				computeDerivedMatrix(PROJ_VIEW_MODEL);
+				glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+				glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+				computeNormalMatrix3x3();
+				glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+				glBindVertexArray(mesh[objId].vao);
+				glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+				popMatrix(MODEL);
+			}
+			else dead_num_particles++;
+		}
+
+		glDepthMask(GL_TRUE); //make depth buffer again writeable
+
+		if (dead_num_particles == MAX_PARTICULAS) {
+			fireworks = 0;
+			dead_num_particles = 0;
+			printf("All particles dead\n");
+		}
+
+	}
+
 	glDisable(GL_BLEND);
 	glDepthMask(GL_TRUE);
 
@@ -1454,6 +1593,7 @@ void processKeys(unsigned char key, int xx, int yy)
 		case 'p': if (pauseFlag == 0) { angulo -= 4; if (accelerationIncrement <= 0.02f) { accelerationIncrement += 0.01f; } } break; //Right
 		case 's': if (pauseFlag == 1) { pauseFlag = 0; } else{ pauseFlag = 1; } break;
 		case 'f': if (fogFlag == 1) { fogFlag = 0; } else { fogFlag = 1; } break;
+		case 'e': fireworks = 1; iniParticles(); break;
 
 		//Light keys
 		case 'n': if (lightFlag == 1) { lightFlag = 0; } else { lightFlag = 1; } break; //Disable Directional light
@@ -1633,7 +1773,7 @@ void init()
 	freeType_init(font_name);
 
 	glGenTextures(3, TextureArray);
-	Texture2D_Loader(TextureArray, "stone.tga", 0);
+	Texture2D_Loader(TextureArray, "particle.tga", 0);
 	Texture2D_Loader(TextureArray, "table-cloth3.jpg", 1);
 	Texture2D_Loader(TextureArray, "cloth2.jpg", 2);
 	Import3DFromFile("spider/spider.obj");
@@ -1687,7 +1827,14 @@ void init()
 	//CARRO
 	objId = 1;
 	//creation of Mymesh array with VAO Geometry and Material
-	 myMeshes = createMeshFromAssimp(scene);
+	//myMeshes = createMeshFromAssimp(scene);
+	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
+	mesh[objId].mat.shininess = shininess;
+	mesh[objId].mat.texCount = texcount;
+	createCylinder(1.0f, 0.3f, 64);
 
 	//RODAS
 	objId = 2;
@@ -1884,6 +2031,11 @@ void init()
 	mesh[objId].mat.texCount = texcount;
 	createCube();
 	diff1[3] = 1.0f;
+
+	//PARTICULAS
+	objId = 784;
+	mesh[objId].mat.texCount = texcount;
+	createQuad(2, 2);
 
 
 	// some GL settings

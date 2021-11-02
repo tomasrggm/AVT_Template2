@@ -16,6 +16,7 @@ vec4 l_spotDir = vec4(0.0,0.0,-1.0,1.0);
 
 float density = 0.05;
 
+uniform sampler2D texmap;
 uniform sampler2D texmap1;
 uniform sampler2D texmap2;
 uniform int texMode;
@@ -40,6 +41,7 @@ void main() {
 	vec4 accumulatedValue = vec4(0.0);
 	vec4 texel = vec4(0.0);
 	vec4 texel1 = vec4(0.0);
+	vec4 texel2 = vec4(0.0);
 
 	for(int i = 0; i < 7; ++i) {
 		if(i < 6) {
@@ -58,7 +60,8 @@ void main() {
 				if(texMode == 0) {
 					texel = texture(texmap2, DataIn[i].tex_coord);
 					texel1 = texture(texmap1, DataIn[i].tex_coord);
-					accumulatedValue +=(spec + intensity*mat.diffuse*texel*texel1)* luzDifusa;
+					texel2 = texture(texmap, DataIn[i].tex_coord);
+					accumulatedValue +=(spec + intensity*mat.diffuse*texel*texel1*texel2)* luzDifusa;
 				}
 				else {
 					accumulatedValue +=(spec + intensity*mat.diffuse)* luzDifusa;
@@ -82,7 +85,8 @@ void main() {
 					if(texMode == 0) {
 						texel = texture(texmap2, DataIn[i].tex_coord);
 						texel1 = texture(texmap1, DataIn[i].tex_coord);
-						accumulatedValue += (spec + intensity*mat.diffuse*texel*texel1) * luzHolofote;
+						texel2 = texture(texmap, DataIn[i].tex_coord);
+						accumulatedValue += (spec + intensity*mat.diffuse*texel*texel1*texel2) * luzHolofote;
 					}
 					else {
 						accumulatedValue += (spec + intensity*mat.diffuse) * luzHolofote;
@@ -103,7 +107,7 @@ void main() {
 	//visibility = clamp(visibility, 0.0, 1.0);
 
 	if(texMode == 0) { //Ensure directional light applies to the textures
-		colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel * texel1);
+		colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel * texel1 * texel2);
 	}
 
 	else {
