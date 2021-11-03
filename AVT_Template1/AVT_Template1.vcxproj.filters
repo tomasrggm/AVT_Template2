@@ -56,9 +56,6 @@
     <ClInclude Include="avtFreeType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="flare.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\pointlight.frag">

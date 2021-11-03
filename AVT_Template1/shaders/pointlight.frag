@@ -18,7 +18,6 @@ float density = 0.05;
 
 uniform sampler2D texmap1;
 uniform sampler2D texmap2;
-uniform sampler2D texmap3;
 uniform int texMode;
 
 uniform vec4 luzDirectional;
@@ -60,7 +59,7 @@ void main() {
 					texel1 = texture(texmap1, DataIn[i].tex_coord);
 					accumulatedValue +=(spec + intensity*mat.diffuse*texel*texel1)* luzDifusa;
 				}
-				else if (texMode != 3) {
+				else {
 					accumulatedValue +=(spec + intensity*mat.diffuse)* luzDifusa;
 				}
 				
@@ -84,7 +83,7 @@ void main() {
 						texel1 = texture(texmap1, DataIn[i].tex_coord);
 						accumulatedValue += (spec + intensity*mat.diffuse*texel*texel1) * luzHolofote;
 					}
-					else if(texMode != 3) {
+					else {
 						accumulatedValue += (spec + intensity*mat.diffuse) * luzHolofote;
 					}
 					
@@ -104,12 +103,9 @@ void main() {
 
 	if(texMode == 0) { //Ensure directional light applies to the textures
 		colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel * texel1);
-	}else if(texMode == 3){
-		texel = texture(texmap3, DataIn[1].tex_coord);
-		if((texel.a == 0.0)  || (mat.diffuse.a == 0.0) ) discard;
-		else
-			colorOut = mat.diffuse * texel;
-	}else {
+	}
+
+	else {
 		colorOut = max(accumulatedValue , mat.ambient * luzDirectional);
 	}
 

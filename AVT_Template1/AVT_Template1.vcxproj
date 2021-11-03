@@ -169,7 +169,6 @@
     <ClInclude Include="AVTmathLib.h" />
     <ClInclude Include="basic_geometry.h" />
     <ClInclude Include="cube.h" />
-    <ClInclude Include="flare.h" />
     <ClInclude Include="Texture_Loader.h" />
     <ClInclude Include="VertexAttrDef.h" />
     <ClInclude Include="vsShaderLib.h" />
