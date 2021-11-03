@@ -16,6 +16,7 @@ vec4 l_spotDir = vec4(0.0,0.0,-1.0,1.0);
 
 float density = 0.05;
 
+uniform sampler2D texmap;
 uniform sampler2D texmap1;
 uniform sampler2D texmap2;
 uniform int texMode;
@@ -39,6 +40,7 @@ void main() {
 	vec4 accumulatedValue = vec4(0.0);
 	vec4 texel = vec4(0.0);
 	vec4 texel1 = vec4(0.0);
+	vec4 texel2 = vec4(0.0);
 
 	for(int i = 0; i < 7; ++i) {
 		if(i < 6) {
@@ -107,6 +109,10 @@ void main() {
 
 	else {
 		colorOut = max(accumulatedValue , mat.ambient * luzDirectional);
+	}
+	if(texMode == 3){
+		texel2 = texture(texmap, DataIn[5].tex_coord);
+		colorOut = texel2 * mat.diffuse;
 	}
 
 	colorOut[3] = mat.diffuse.a; 
