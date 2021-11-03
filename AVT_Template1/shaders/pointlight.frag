@@ -112,7 +112,9 @@ void main() {
 	}
 	if(texMode == 3){
 		texel2 = texture(texmap, DataIn[5].tex_coord);
-		colorOut = texel2 * mat.diffuse;
+		if((texel2.a == 0.0)  || (mat.diffuse.a == 0.0) ) discard;
+		else
+			colorOut = texel2 * mat.diffuse;
 	}
 
 	colorOut[3] = mat.diffuse.a; 
