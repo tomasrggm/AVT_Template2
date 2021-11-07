@@ -16,10 +16,11 @@ vec4 l_spotDir = vec4(0.0,0.0,-1.0,1.0);
 
 float density = 0.05;
 
-uniform sampler2D texmap; //tree
+uniform sampler2D texmap; //billboard
 uniform sampler2D texmap1; //table-cloth
 uniform sampler2D texmap2; //cloth
 uniform sampler2D texmap3; //fireworks
+uniform bool shadowMode; //Shadows
 uniform int texMode;
 uniform int fog;
 
@@ -45,99 +46,124 @@ void main() {
 	vec4 texel2 = vec4(0.0);
 	vec4 texel3 = vec4(0.0);
 
-	for(int i = 0; i < 8; ++i) {
-		if(i < 6) {
-			vec3 n = normalize(DataIn[i].normal);
-			vec3 l = normalize(DataIn[i].lightDir);
-			vec3 e = normalize(DataIn[i].eye);
+	if(shadowMode)  //constant color
+		colorOut = vec4(0.5, 0.5, 0.5, 1.0);
 
-			float intensity = max(dot(n,l), 0.0);
-
-	
-			if (intensity > 0.0) {
-
-				vec3 h = normalize(l + e);
-				float intSpec = max(dot(h,n), 0.0);
-				spec = mat.specular * pow(intSpec, mat.shininess);
-				if(texMode == 1) {
-					texel1 = texture(texmap1, DataIn[i].tex_coord);
-					texel2 = texture(texmap2, DataIn[i].tex_coord);
-					accumulatedValue +=(spec + intensity*mat.diffuse*texel1*texel2)* luzDifusa;
-				}
-				else if(texMode == 2) {
-					texel = texture(texmap, DataIn[i].tex_coord);
-					if(texel.a == 0.0) discard;
-					else {
-						accumulatedValue += (spec + intensity*mat.diffuse*texel) * luzDifusa;
-						accumulatedValue[3] += texel.a;
-					}
-				}
-				else if(texMode == 3) {
-						texel3 = texture(texmap3, DataIn[i].tex_coord);
-						accumulatedValue += (spec + intensity*mat.diffuse*texel3) * luzDifusa;
-					}
-				else {
-					accumulatedValue +=(spec + intensity*mat.diffuse)* luzDifusa;
-				}
-				
-			}
-		}
-		else {
-			float intensity = 0.0;
-			vec4 spec = vec4(0.0);
-			vec3 ld = normalize(DataIn[i].lightDir);
-			vec3 sd = normalize(vec3(-l_spotDir));
-			if (dot(sd,ld) > l_spotCutOff) {
+	else {
+		for(int i = 0; i < 8; ++i) {
+			if(i < 6) {
 				vec3 n = normalize(DataIn[i].normal);
-				intensity = max(dot(n,ld), 0.0);
+				vec3 l = normalize(DataIn[i].lightDir);
+				vec3 e = normalize(DataIn[i].eye);
+
+				float intensity = max(dot(n,l), 0.0);
+	
 				if (intensity > 0.0) {
-					vec3 eye = normalize(DataIn[i].eye);
-					vec3 h = normalize(ld + eye);
+
+					vec3 h = normalize(l + e);
 					float intSpec = max(dot(h,n), 0.0);
 					spec = mat.specular * pow(intSpec, mat.shininess);
 					if(texMode == 1) {
 						texel1 = texture(texmap1, DataIn[i].tex_coord);
 						texel2 = texture(texmap2, DataIn[i].tex_coord);
-						accumulatedValue += (spec + intensity*mat.diffuse*texel1*texel2) * luzHolofote;
+						accumulatedValue +=(spec + intensity*mat.diffuse*texel1*texel2)* luzDifusa;
 					}
 					else if(texMode == 2) {
 						texel = texture(texmap, DataIn[i].tex_coord);
 						if(texel.a == 0.0) discard;
 						else {
-							accumulatedValue += (spec + intensity*mat.diffuse*texel) * luzHolofote;
+							accumulatedValue += (spec + intensity*mat.diffuse*texel) * luzDifusa;
 							accumulatedValue[3] += texel.a;
 						}
 					}
 					else if(texMode == 3) {
-						texel3 = texture(texmap3, DataIn[i].tex_coord);
-						accumulatedValue += (spec + intensity*mat.diffuse*texel3) * luzHolofote;
-					}
+							texel3 = texture(texmap3, DataIn[i].tex_coord);
+							accumulatedValue += (spec + intensity*mat.diffuse*texel3) * luzDifusa;
+						}
 					else {
-						accumulatedValue += (spec + intensity*mat.diffuse) * luzHolofote;
+						accumulatedValue +=(spec + intensity*mat.diffuse)* luzDifusa;
 					}
-					
+				
 				}
 			}
 			else {
-				vec3 n = normalize(DataIn[i].normal);
-				intensity = max(dot(n,ld), 0.0);
-				if (intensity > 0.0) {
-					vec3 eye = normalize(DataIn[i].eye);
-					vec3 h = normalize(ld + eye);
-					float intSpec = max(dot(h,n), 0.0);
-					spec = mat.specular * pow(intSpec, mat.shininess);
-					if(texMode == 2) {
-						texel = texture(texmap, DataIn[i].tex_coord);
-						if(texel.a == 0.0) discard;
+				float intensity = 0.0;
+				vec4 spec = vec4(0.0);
+				vec3 ld = normalize(DataIn[i].lightDir);
+				vec3 sd = normalize(vec3(-l_spotDir));
+				if (dot(sd,ld) > l_spotCutOff) {
+					vec3 n = normalize(DataIn[i].normal);
+					intensity = max(dot(n,ld), 0.0);
+					if (intensity > 0.0) {
+						vec3 eye = normalize(DataIn[i].eye);
+						vec3 h = normalize(ld + eye);
+						float intSpec = max(dot(h,n), 0.0);
+						spec = mat.specular * pow(intSpec, mat.shininess);
+						if(texMode == 1) {
+							texel1 = texture(texmap1, DataIn[i].tex_coord);
+							texel2 = texture(texmap2, DataIn[i].tex_coord);
+							accumulatedValue += (spec + intensity*mat.diffuse*texel1*texel2) * luzHolofote;
+						}
+						else if(texMode == 2) {
+							texel = texture(texmap, DataIn[i].tex_coord);
+							if(texel.a == 0.0) discard;
+							else {
+								accumulatedValue += (spec + intensity*mat.diffuse*texel) * luzHolofote;
+								accumulatedValue[3] += texel.a;
+							}
+						}
+						else if(texMode == 3) {
+							texel3 = texture(texmap3, DataIn[i].tex_coord);
+							accumulatedValue += (spec + intensity*mat.diffuse*texel3) * luzHolofote;
+						}
 						else {
-							accumulatedValue += (spec + intensity*mat.diffuse*texel) * luzHolofote;
-							accumulatedValue[3] += texel.a;
+							accumulatedValue += (spec + intensity*mat.diffuse) * luzHolofote;
+						}
+					
+					}
+				}
+				else {
+					vec3 n = normalize(DataIn[i].normal);
+					intensity = max(dot(n,ld), 0.0);
+					if (intensity > 0.0) {
+						vec3 eye = normalize(DataIn[i].eye);
+						vec3 h = normalize(ld + eye);
+						float intSpec = max(dot(h,n), 0.0);
+						spec = mat.specular * pow(intSpec, mat.shininess);
+						if(texMode == 2) {
+							texel = texture(texmap, DataIn[i].tex_coord);
+							if(texel.a == 0.0) discard;
+							else {
+								accumulatedValue += (spec + intensity*mat.diffuse*texel) * luzHolofote;
+								accumulatedValue[3] += texel.a;
+							}
 						}
 					}
 				}
 			}
+
 		}
 
+		if(texMode == 1) { //Ensure directional light applies to the table textures
+			colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel1 * texel2);
+			colorOut[3] = mat.diffuse.a;
+		}
+
+		else if(texMode == 2) { //Ensure directional light applies to the tree billboards
+			if(texel.a == 0.0) discard;
+			else {
+				colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel);
+				colorOut[3] = texel.a;
+			}
+		}
+
+		else if(texMode == 3) { //Ensure directional light applies to the fireworks
+			colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel3);
+		}
+
+		else {
+			colorOut = max(accumulatedValue , mat.ambient * luzDirectional);
+		}
 	}
 
 	vec3 fogColor = vec3(0.5,0.6,0.7); //define fog color
@@ -147,27 +173,6 @@ void main() {
 
 	float visibility = exp(-distance*density); //fog function
 	//visibility = clamp(visibility, 0.0, 1.0);
-
-	if(texMode == 1) { //Ensure directional light applies to the table textures
-		colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel1 * texel2);
-		colorOut[3] = mat.diffuse.a;
-	}
-
-	else if(texMode == 2) { //Ensure directional light applies to the tree billboards
-		if(texel.a == 0.0) discard;
-		else {
-			colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel);
-			colorOut[3] = texel.a;
-		}
-	}
-
-	else if(texMode == 3) { //Ensure directional light applies to the fireworks
-		colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel3);
-	}
-
-	else {
-		colorOut = max(accumulatedValue , mat.ambient * luzDirectional);
-	}
 
 	//apply fog
 	colorOut[3] = mat.diffuse.a; 

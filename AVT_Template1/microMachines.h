@@ -1,21 +1,23 @@
-void drawCar(GLint& loc);
+void drawCar();
 
-void drawCarWheels(GLint& loc);
+void drawCarWheels();
 
-void drawTable(GLint& loc);
+void drawTable();
 
-void drawLights();
+void drawOranges();
 
-void drawOranges(GLint& loc);
+void drawButters();
 
-void drawButters(GLint& loc);
+void drawRaceTrackCheerios();
 
-void drawRaceTrackCheerios(GLint& loc);
+void drawSpectatorBillboards();
 
-void drawSpectatorBillboards(GLint& loc);
-
-void drawCarGlass(GLint& loc);
+void drawCarGlass();
 
 void drawHUDText();
 
-void drawFireworks(float  particle_color[4], GLint& loc);
+void setupCameraLookAts();
+
+void drawObjects();
+
+void drawFireworks();

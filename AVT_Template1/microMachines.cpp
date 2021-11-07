@@ -127,7 +127,7 @@ GLint lAngle_uniformId;
 GLint lPos_uniformId8;
 
 GLint tex_loc, tex_loc1, tex_loc2, tex_loc3;
-GLint texMode_uniformId;
+GLint texMode_uniformId, shadowMode_uniformId;
 GLint fog_uniformId;
 
 GLint normalMap_loc;
@@ -396,7 +396,7 @@ void changeSize(int w, int h) {
 	}
 
 	else if (cameraFlag == 2) {
-		perspective(90.0f, ratio, 0.1f, 1000.0f);
+		perspective(100.0f, ratio, 0.1f, 1000.0f);
 	}
 
 	else if (cameraFlag == 3) {
@@ -511,9 +511,52 @@ void aiRecursive_render(const aiScene* sc, const aiNode* nd)
 	popMatrix(MODEL);
 }
 
-
-void drawCar(GLint& loc)
+void drawTable()
 {
+	GLint loc;
+
+	objId = 0;
+	// send the material
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	translate(MODEL, -60.0f, 0, -70.0f);
+	scale(MODEL, 80.0f, 1.0f, 140.0f);
+
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glUniform1i(texMode_uniformId, 1); // linha da textura
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
+	glUniform1i(texMode_uniformId, 0);
+}
+
+void drawCar()
+{
+	GLint loc;
+
 	objId = 1;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
@@ -551,11 +594,13 @@ void drawCar(GLint& loc)
 	popMatrix(MODEL);
 
 	//RODAS
-	drawCarWheels(loc);
+	drawCarWheels();
 }
 
-void drawCarWheels(GLint& loc)
+void drawCarWheels()
 {
+	GLint loc;
+
 	objId = 2;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
@@ -698,146 +743,10 @@ void drawCarWheels(GLint& loc)
 	popMatrix(MODEL);
 }
 
-void drawTable(GLint& loc)
+void drawOranges()
 {
-	objId = 0;
-	// send the material
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-	glUniform4fv(loc, 1, mesh[objId].mat.specular);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
-	pushMatrix(MODEL);
+	GLint loc;
 
-	translate(MODEL, -100.0f, 0, -100.0f);
-	scale(MODEL, 200.0f, 1.0f, 200.0f);
-
-
-	// send matrices to OGL
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-	computeNormalMatrix3x3();
-	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-	// Render mesh
-	glUniform1i(texMode_uniformId, 1); // linha da textura
-	glBindVertexArray(mesh[objId].vao);
-
-	if (!shader.isProgramValid()) {
-		printf("Program Not Valid!\n");
-		exit(1);
-	}
-	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
-	popMatrix(MODEL);
-	glUniform1i(texMode_uniformId, 0);
-}
-
-void drawLights()
-{
-
-	//glUniform4fv(lPos_uniformId, 1, lightPos); //efeito capacete do mineiro, ou seja lighPos foi definido em eye coord 
-
-
-	if (lightFlag == 1) {
-		float res2[4] = { 1.0,1.0,1.0,0.0 };
-		glUniform4fv(lStr_uniformId, 1, res2);
-	}
-	else {
-		float res2[4] = { 0.0,0.0,0.0,0.0 };
-		glUniform4fv(lStr_uniformId, 1, res2);
-	}
-	if (lightFlag2 == 1) {
-		float res2[4] = { 1.0,1.0,1.0,1.0 };
-		glUniform4fv(lStr_uniformId2, 1, res2);
-	}
-	else {
-		float res2[4] = { 0.0,0.0,0.0,0.0 };
-		glUniform4fv(lStr_uniformId2, 1, res2);
-	}
-	if (lightFlag3 == 1) {
-		float res2[4] = { 1.0,1.0,1.0,1.0 };
-		glUniform4fv(lStr_uniformId3, 1, res2);
-	}
-	else {
-		float res2[4] = { 0.0,0.0,0.0,0.0 };
-		glUniform4fv(lStr_uniformId3, 1, res2);
-	}
-
-	//fog flag
-	if (fogFlag == 1) {
-		glUniform1i(fog_uniformId, 1);
-	}
-	else {
-		glUniform1i(fog_uniformId, 0);
-	}
-
-	float res[4];
-	multMatrixPoint(VIEW, lightPos, res);   //lightPos definido em World Coord so is converted to eye space
-	glUniform4fv(lPos_uniformId, 1, res);
-
-
-	float res3[4];
-	multMatrixPoint(VIEW, lightPos2, res3);   //lightPos definido em World Coord so is converted to eye space
-	glUniform4fv(lPos_uniformId2, 1, res3);
-
-	float res4[4];
-	multMatrixPoint(VIEW, lightPos3, res4);   //lightPos definido em World Coord so is converted to eye space
-	glUniform4fv(lPos_uniformId3, 1, res4);
-
-	float res5[4];
-	multMatrixPoint(VIEW, lightPos4, res5);   //lightPos definido em World Coord so is converted to eye space
-	glUniform4fv(lPos_uniformId4, 1, res5);
-
-	float res6[4];
-	multMatrixPoint(VIEW, lightPos5, res6);   //lightPos definido em World Coord so is converted to eye space
-	glUniform4fv(lPos_uniformId5, 1, res6);
-
-	float res7[4];
-	multMatrixPoint(VIEW, lightPos6, res7);   //lightPos definido em World Coord so is converted to eye space
-	glUniform4fv(lPos_uniformId6, 1, res7);
-
-
-
-	lPos_uniformId7 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[6]"); //holofote
-	lPos_uniformId8 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[7]"); //holofote
-
-	float res8[4] = { carX + 0.5f,carY,carZ + 0.5f,1.0f };
-	float res11[4];
-	multMatrixPoint(VIEW, res8, res11);
-	glUniform4fv(lPos_uniformId7, 1, res11);
-
-	float res9[4] = { carX - 0.5f,carY,carZ + 0.5f,1.0f };
-	float res10[4];
-	multMatrixPoint(VIEW, res9, res10);
-	glUniform4fv(lPos_uniformId8, 1, res10);
-
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
-
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
-
-	glActiveTexture(GL_TEXTURE3);
-	glBindTexture(GL_TEXTURE_2D, TextureArray[3]);
-
-	glUniform1i(tex_loc, 0);
-	glUniform1i(tex_loc1, 1);
-	glUniform1i(tex_loc2, 2);
-	glUniform1i(tex_loc3, 3);
-}
-
-void drawOranges(GLint& loc)
-{
 	objId = 6;
 	for (int i = 0; i < 4; i++) {
 		loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
@@ -915,8 +824,10 @@ void drawOranges(GLint& loc)
 	}
 }
 
-void drawButters(GLint& loc)
+void drawButters()
 {
+	GLint loc;
+
 	objId = 14;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
@@ -1063,8 +974,10 @@ void drawButters(GLint& loc)
 	popMatrix(MODEL);
 }
 
-void drawRaceTrackCheerios(GLint& loc)
+void drawRaceTrackCheerios()
 {
+	GLint loc;
+
 	objId = 18;
 
 	for (int i = -50; i < 48; ++i) {
@@ -1384,8 +1297,10 @@ void drawRaceTrackCheerios(GLint& loc)
 	}
 }
 
-void drawSpectatorBillboards(GLint& loc)
+void drawSpectatorBillboards()
 {
+	GLint loc;
+	glEnable(GL_BLEND);
 	//Despite of blending, they are considered opaque so z-buffer works normally
 
 	float pos[3];
@@ -1393,7 +1308,7 @@ void drawSpectatorBillboards(GLint& loc)
 	objId = 782;
 	for (int i = -6; i < 2; i++) {
 		for (int j = -7; j < 7; j++) {
-			if (j > -7 && j < 6 && i > -6 && i < 1) {
+			if (j > -7 && j < 6 && i > -6 && i < 1) { //only render billboards outside of race track
 				continue;
 			}
 			pushMatrix(MODEL);
@@ -1450,10 +1365,16 @@ void drawSpectatorBillboards(GLint& loc)
 			glUniform1i(texMode_uniformId, 0);
 		}
 	}
+	glDisable(GL_BLEND);
 }
 
-void drawCarGlass(GLint& loc)
+void drawCarGlass()
 {
+	GLint loc;
+	//Enable blending and make Z-buffer read-only
+	glEnable(GL_BLEND);
+	glDepthMask(GL_FALSE);
+
 	objId = 783;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
@@ -1488,10 +1409,23 @@ void drawCarGlass(GLint& loc)
 	glBindVertexArray(0);
 
 	popMatrix(MODEL);
+
+	//Re-enable depth-test writing and disable blending
+	glDisable(GL_BLEND);
+	glDepthMask(GL_TRUE);
 }
 
-void drawFireworks(float  particle_color[4], GLint& loc)
+void drawFireworks()
 {
+	GLint loc;
+	float particle_color[4];
+	float pos[3];
+	float cam[3] = { camX, camY, camZ };
+
+	//Enable blending and make Z-buffer read-only
+	glEnable(GL_BLEND);
+	glDepthMask(GL_FALSE);
+
 	objId = 784;  //quad for particle
 	if (fireworks) {
 
@@ -1518,6 +1452,13 @@ void drawFireworks(float  particle_color[4], GLint& loc)
 				particle_color[2] = particula[i].b;
 				particle_color[3] = particula[i].life;
 
+				pos[0] = particula[i].x; pos[1] = particula[i].y; pos[2] = particula[i].z;
+
+				if (billboardType == 2)
+					l3dBillboardSphericalBegin(cam, pos);
+				else if (billboardType == 3)
+					l3dBillboardCylindricalBegin(cam, pos);
+
 				// send the material - diffuse color modulated with texture
 				loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
 				glUniform4fv(loc, 1, particle_color);
@@ -1526,7 +1467,17 @@ void drawFireworks(float  particle_color[4], GLint& loc)
 				translate(MODEL, particula[i].x, particula[i].y, particula[i].z);
 
 				// send matrices to OGL
-				computeDerivedMatrix(PROJ_VIEW_MODEL);
+				if (billboardType == 0 || billboardType == 1) {     //Cheating matrix reset billboard techniques
+					computeDerivedMatrix(VIEW_MODEL);
+
+					//reset VIEW_MODEL
+					if (billboardType == 0) BillboardCheatSphericalBegin();
+					else BillboardCheatCylindricalBegin();
+
+					computeDerivedMatrix_PVM(); // calculate PROJ_VIEW_MODEL
+				}
+				else computeDerivedMatrix(PROJ_VIEW_MODEL);
+
 				glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
 				glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
 				computeNormalMatrix3x3();
@@ -1549,7 +1500,51 @@ void drawFireworks(float  particle_color[4], GLint& loc)
 
 	}
 
+	//Re-enable depth-test writing and disable blending
+	glDisable(GL_BLEND);
+	glDepthMask(GL_TRUE);
 	glUniform1i(texMode_uniformId, 0);
+}
+
+void drawObjects()
+{
+	//CAR
+	drawCar();
+
+	//ORANGES
+	drawOranges();
+
+	//BUTTERS
+	drawButters();
+
+	//RACE-TRACK-CHEERIOS
+	drawRaceTrackCheerios();
+
+	//Blended objects
+	//BILLBOARDS
+	drawSpectatorBillboards();
+	
+	//CAR-GLASS
+	drawCarGlass();
+}
+
+void drawObjectsButRaceTrack()
+{
+	//CAR
+	drawCar();
+
+	//ORANGES
+	drawOranges();
+
+	//BUTTERS
+	drawButters();
+
+	//Blended objects
+	//BILLBOARDS
+	drawSpectatorBillboards();
+
+	//CAR-GLASS
+	drawCarGlass();
 }
 
 void drawHUDText()
@@ -1576,26 +1571,13 @@ void drawHUDText()
 	popMatrix(PROJECTION);
 	popMatrix(VIEW);
 	popMatrix(MODEL);
+
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
 }
 
-void renderScene(void) {
-	
-	GLint loc;
-
-	timeSinceStart = glutGet(GLUT_ELAPSED_TIME);
-	deltaTime = timeSinceStart - oldTimeSinceStart;
-	deltaTime = deltaTime / 1000;
-	oldTimeSinceStart = timeSinceStart;
-
-	FrameCount++;
-
-	float particle_color[4];
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	// load identity matrices
-	loadIdentity(VIEW);
-	loadIdentity(MODEL);
-	// set the camera using a function similar to gluLookAt
+void setupCameraLookAts()
+{
 	if (cameraFlag == 1) { //Fixed ortho camera
 		lookAt(-19.5f, 10.0f, 0, -19.5f, 0, 0 + 0.01, 0, 1, 0);
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
@@ -1603,7 +1585,7 @@ void renderScene(void) {
 	else if (cameraFlag == 2) { //Fixed perspective camera
 		//lookAt(carX, 15.0f, carZ, carX, carY, carZ + 0.01, 0, 1, 0);
 		//lookAt(-19.5, 0.0f, -70.0f, -19.5f, 0, 0 + 0.01, 0, 1, 0);
-		lookAt(-19.5f, 60.0f, 0, -19.5f, 0, 0 + 0.01, 0, 1, 0);
+		lookAt(20.0f, 40.0, 0, -19.5f, 0, 0 + 0.01, 0, 1, 0);
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 	}
 	else if (cameraFlag == 3) { //Movement camera
@@ -1616,53 +1598,200 @@ void renderScene(void) {
 
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 	}
+}
+
+void renderScene(void) {
+
+	timeSinceStart = glutGet(GLUT_ELAPSED_TIME);
+	deltaTime = timeSinceStart - oldTimeSinceStart;
+	deltaTime = deltaTime / 1000;
+	oldTimeSinceStart = timeSinceStart;
+
+	FrameCount++;
+
+	float mat[16];
+	GLfloat plano_chao[4] = { 0,1,0,0 };
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// load identity matrices
+	loadIdentity(VIEW);
+	loadIdentity(MODEL);
+	// set the camera using a function similar to gluLookAt
+	setupCameraLookAts();
 	
 	// use our shader
 	glUseProgram(shader.getProgramIndex());
 
+	// set textures
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[0]);
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[1]);
+
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
+
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, TextureArray[3]);
+
+	glUniform1i(tex_loc, 0);
+	glUniform1i(tex_loc1, 1);
+	glUniform1i(tex_loc2, 2);
+	glUniform1i(tex_loc3, 3);
+
 	//send the light position in eye coordinates
-	drawLights();
+	//glUniform4fv(lPos_uniformId, 1, lightPos); //efeito capacete do mineiro, ou seja lighPos foi definido em eye coord 
 
-	//MESA
-	drawTable(loc);
+	if (lightFlag == 1) {
+		float res2[4] = { 1.0,1.0,1.0,0.0 };
+		glUniform4fv(lStr_uniformId, 1, res2);
+	}
+	else {
+		float res2[4] = { 0.0,0.0,0.0,0.0 };
+		glUniform4fv(lStr_uniformId, 1, res2);
+	}
+	if (lightFlag2 == 1) {
+		float res2[4] = { 1.0,1.0,1.0,1.0 };
+		glUniform4fv(lStr_uniformId2, 1, res2);
+	}
+	else {
+		float res2[4] = { 0.0,0.0,0.0,0.0 };
+		glUniform4fv(lStr_uniformId2, 1, res2);
+	}
+	if (lightFlag3 == 1) {
+		float res2[4] = { 1.0,1.0,1.0,1.0 };
+		glUniform4fv(lStr_uniformId3, 1, res2);
+	}
+	else {
+		float res2[4] = { 0.0,0.0,0.0,0.0 };
+		glUniform4fv(lStr_uniformId3, 1, res2);
+	}
 
-	//CARRO
-	drawCar(loc);
+	//fog flag
+	if (fogFlag == 1) {
+		glUniform1i(fog_uniformId, 1);
+	}
+	else {
+		glUniform1i(fog_uniformId, 0);
+	}
 
-	//LARANJAS
-	drawOranges(loc);
+	float res[4];
+	multMatrixPoint(VIEW, lightPos, res);   //lightPos definido em World Coord so is converted to eye space
+	glUniform4fv(lPos_uniformId, 1, res);
 
-	//MANTEIGAS
-	drawButters(loc);
 
-	//CHEERIOS
-	drawRaceTrackCheerios(loc);
+	float res3[4];
+	multMatrixPoint(VIEW, lightPos2, res3);   //lightPos definido em World Coord so is converted to eye space
+	glUniform4fv(lPos_uniformId2, 1, res3);
 
-	//Enable blending
-	glEnable(GL_BLEND);
-	//BILLBOARDS
-	drawSpectatorBillboards(loc);
+	float res4[4];
+	multMatrixPoint(VIEW, lightPos3, res4);   //lightPos definido em World Coord so is converted to eye space
+	glUniform4fv(lPos_uniformId3, 1, res4);
 
-	//Make Z-buffer read-only
-	glDepthMask(GL_FALSE);
-	//VIDRO DO CARRO
-	drawCarGlass(loc);
+	float res5[4];
+	multMatrixPoint(VIEW, lightPos4, res5);   //lightPos definido em World Coord so is converted to eye space
+	glUniform4fv(lPos_uniformId4, 1, res5);
 
-	//Fireworks
-	drawFireworks(particle_color, loc);
+	float res6[4];
+	multMatrixPoint(VIEW, lightPos5, res6);   //lightPos definido em World Coord so is converted to eye space
+	glUniform4fv(lPos_uniformId5, 1, res6);
 
-	//Re-enable depth-test writing and disable blending
-	glDisable(GL_BLEND);
-	glDepthMask(GL_TRUE);
+	float res7[4];
+	multMatrixPoint(VIEW, lightPos6, res7);   //lightPos definido em World Coord so is converted to eye space
+	glUniform4fv(lPos_uniformId6, 1, res7);
+
+
+
+	lPos_uniformId7 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[6]"); //holofote
+	lPos_uniformId8 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[7]"); //holofote
+
+	float res8[4] = { carX + 0.5f,carY,carZ + 0.5f,1.0f };
+	float res11[4];
+	multMatrixPoint(VIEW, res8, res11);
+	glUniform4fv(lPos_uniformId7, 1, res11);
+
+	float res9[4] = { carX - 0.5f,carY,carZ + 0.5f,1.0f };
+	float res10[4];
+	multMatrixPoint(VIEW, res9, res10);
+	glUniform4fv(lPos_uniformId8, 1, res10);
+
+
+	//Drawing objects
+	if (camY > 0.0f) { //Make sure reflections and shadows are not on the bottom side of the floor
+		glEnable(GL_STENCIL_TEST);        // Escrever 1 no stencil buffer onde se for desenhar a reflexão e a sombra
+		glStencilFunc(GL_NEVER, 0x1, 0x1);
+		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+
+		// Fill stencil buffer with Ground shape; never rendered into color buffer
+		//TABLE
+		drawTable();
+
+		glUniform1i(shadowMode_uniformId, 0);  //iluminação phong
+
+		// Desenhar apenas onde o stencil buffer esta a 1
+		glStencilFunc(GL_EQUAL, 0x1, 0x1);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+		// Render the reflected geometry
+		lightPos6[1] *= (-1.0f);  //mirror the position of light
+		multMatrixPoint(VIEW, lightPos6, res);
+
+		glUniform4fv(lPos_uniformId6, 1, res);
+		pushMatrix(MODEL);
+		scale(MODEL, 1.0f, -1.0f, 1.0f);
+		glCullFace(GL_FRONT);
+		//Draw all objects but the table
+		drawObjectsButRaceTrack();
+		//Draw fireworks since they should reflect
+		drawFireworks();
+		glCullFace(GL_BACK);
+		popMatrix(MODEL);
+
+		lightPos6[1] *= (-1.0f);  //reset the light position
+		multMatrixPoint(VIEW, lightPos6, res);
+		glUniform4fv(lPos_uniformId6, 1, res);
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);		// Blend specular Ground with reflected geometry
+		drawTable();
+
+		// Render the Shadows
+		glUniform1i(shadowMode_uniformId, 1);  //Render with constant color
+		computeShadowMatrix(mat, plano_chao, lightPos6);
+
+		glDisable(GL_DEPTH_TEST); //To force the shadow geometry to be rendered even if behind the floor
+
+		//Dark the color stored in color buffer
+		glBlendFunc(GL_DST_COLOR, GL_ZERO);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_ZERO);
+
+		pushMatrix(MODEL);
+		multMatrix(MODEL, mat);
+		drawObjectsButRaceTrack();
+		popMatrix(MODEL);
+
+		glDisable(GL_STENCIL_TEST);
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+
+		//render the geometry
+		glUniform1i(shadowMode_uniformId, 0);
+		drawObjects();
+		drawFireworks();
+	}
+
+	else {
+		drawTable();
+		drawObjects();
+		drawFireworks();
+	}
 
 	renderedFlag = 1;
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	//Texto
 	drawHUDText();
-
-	glEnable(GL_DEPTH_TEST);
-	glDisable(GL_BLEND);
 
 	glutSwapBuffers();
 }
@@ -1895,6 +2024,7 @@ GLuint setupShaders() {
 	glLinkProgram(shader.getProgramIndex());
 
 	texMode_uniformId = glGetUniformLocation(shader.getProgramIndex(), "texMode");
+	shadowMode_uniformId = glGetUniformLocation(shader.getProgramIndex(), "shadowMode");
 	fog_uniformId = glGetUniformLocation(shader.getProgramIndex(), "fog");
 	pvm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_pvm");
 	vm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_viewModel");
