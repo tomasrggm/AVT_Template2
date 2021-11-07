@@ -65,8 +65,9 @@ int lightFlag2 = 1; //tudo o resto
 int lightFlag3 = 1; //holofotes
 int fogFlag = 1; //fog
 int cameraFlag = 1;
+int drawRaceTrackShadowsReflection = 0;
 float carX = 5.0f;
-float carY = 1.5f;
+float carY = 0.55f;
 float carZ = -48.0f;
 float carXbackup = 5.0f;
 float carZbackup = -48.0f;
@@ -527,8 +528,8 @@ void drawTable()
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, -60.0f, 0, -70.0f);
-	scale(MODEL, 80.0f, 1.0f, 140.0f);
+	translate(MODEL, -60.0f, 0.0, -70.0f);
+	scale(MODEL, 80.0f, 0.0005f, 140.0f);
 
 
 	// send matrices to OGL
@@ -759,7 +760,7 @@ void drawOranges()
 		glUniform1f(loc, mesh[objId].mat.shininess);
 		pushMatrix(MODEL);
 
-		translate(MODEL, orangeX[i], 2.0f, orangeZ[i]);
+		translate(MODEL, orangeX[i], 1.0f, orangeZ[i]);
 		rotate(MODEL, orangeRot, 0, 0, 0.1f);
 
 
@@ -798,7 +799,7 @@ void drawOranges()
 		glUniform1f(loc, mesh[objId].mat.shininess);
 		pushMatrix(MODEL);
 
-		translate(MODEL, orangeX[i], 2.0f, orangeZ[i]);
+		translate(MODEL, orangeX[i], 1.0f, orangeZ[i]);
 		rotate(MODEL, orangeRot, 0, 0, 1.0f);
 		translate(MODEL, 0, 1.0f, 0);
 
@@ -843,7 +844,7 @@ void drawButters()
 		torusX[629] = 0.5f;
 		torusZ[629] = 0;
 	}
-	translate(MODEL, torusX[629], 1.0f, torusX[629]);
+	translate(MODEL, torusX[629], 0.1f, torusZ[629]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
 
 	// send matrices to OGL
@@ -879,7 +880,7 @@ void drawButters()
 		torusX[630] = 4.5f;
 		torusZ[630] = 20.0f;
 	}
-	translate(MODEL, torusX[630], 1.0f, torusZ[630]);
+	translate(MODEL, torusX[630], 0.1f, torusZ[630]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
 
 	// send matrices to OGL
@@ -915,7 +916,7 @@ void drawButters()
 		torusX[631] = 4.5f;
 		torusZ[631] = -25.0f;
 	}
-	translate(MODEL, torusX[631], 1.0f, torusZ[631]);
+	translate(MODEL, torusX[631], 0.1f, torusZ[631]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
 
 	// send matrices to OGL
@@ -951,7 +952,7 @@ void drawButters()
 		torusX[632] = 0.5f;
 		torusZ[632] = -40.0f;
 	}
-	translate(MODEL, torusX[632], 1.0f, torusZ[632]);
+	translate(MODEL, torusX[632], 0.1f, torusZ[632]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
 
 	// send matrices to OGL
@@ -995,7 +996,7 @@ void drawRaceTrackCheerios()
 			torusX[i + 50] = 1.0f;
 			torusZ[i + 50] = 1.5f + i;
 		}
-		translate(MODEL, torusX[i + 50], 1.15f, torusZ[i + 50]);
+		translate(MODEL, torusX[i + 50], 0.15f, torusZ[i + 50]);
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);
 		glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
@@ -1035,7 +1036,7 @@ void drawRaceTrackCheerios()
 			torusZ[i + 58 + 98] = 1.5f + i;
 		}
 
-		translate(MODEL, torusX[i + 58 + 98], 1.15f, torusZ[i + 58 + 98]);
+		translate(MODEL, torusX[i + 58 + 98], 0.15f, torusZ[i + 58 + 98]);
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);
 		glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
@@ -1076,7 +1077,7 @@ void drawRaceTrackCheerios()
 			torusX[i + 50 + 213] = 0.0f + i;
 			torusZ[i + 50 + 213] = 57.5f;
 		}
-		translate(MODEL, torusX[i + 50 + 213], 1.15f, torusZ[i + 50 + 213]);
+		translate(MODEL, torusX[i + 50 + 213], 0.15f, torusZ[i + 50 + 213]);
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);
 		glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
@@ -1117,7 +1118,7 @@ void drawRaceTrackCheerios()
 			torusX[i + 50 + 273] = 0.0f + i;
 			torusZ[i + 50 + 273] = -57.5f;
 		}
-		translate(MODEL, torusX[i + 50 + 273], 1.15f, torusZ[i + 50 + 273]);
+		translate(MODEL, torusX[i + 50 + 273], 0.15f, torusZ[i + 50 + 273]);
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);
 		glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
@@ -1157,7 +1158,7 @@ void drawRaceTrackCheerios()
 			torusX[i + 58 + 333] = -50.0f;
 			torusZ[i + 58 + 333] = 1.5f + i;
 		}
-		translate(MODEL, torusX[i + 58 + 333], 1.15f, torusZ[i + 58 + 333]);
+		translate(MODEL, torusX[i + 58 + 333], 0.15f, torusZ[i + 58 + 333]);
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);
 		glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
@@ -1196,7 +1197,7 @@ void drawRaceTrackCheerios()
 			torusX[i + 40 + 448] = 0 + i;
 			torusZ[i + 40 + 448] = -49.5f;
 		}
-		translate(MODEL, torusX[i + 40 + 448], 1.15f, torusZ[i + 40 + 448]);
+		translate(MODEL, torusX[i + 40 + 448], 0.15f, torusZ[i + 40 + 448]);
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);
 		glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
@@ -1234,7 +1235,7 @@ void drawRaceTrackCheerios()
 			torusX[i + 40 + 489] = 0 + i;
 			torusZ[i + 40 + 489] = 49.5f;
 		}
-		translate(MODEL, torusX[i + 40 + 489], 1.15f, torusZ[i + 40 + 489]);
+		translate(MODEL, torusX[i + 40 + 489], 0.15f, torusZ[i + 40 + 489]);
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);
 		glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
@@ -1275,7 +1276,7 @@ void drawRaceTrackCheerios()
 			torusX[i + 50 + 530] = -40;
 			torusZ[i + 50 + 530] = 1.5f + i;
 		}
-		translate(MODEL, torusX[i + 50 + 530], 1.15f, torusZ[i + 50 + 530]);
+		translate(MODEL, torusX[i + 50 + 530], 0.15f, torusZ[i + 50 + 530]);
 		// send matrices to OGL
 		computeDerivedMatrix(PROJ_VIEW_MODEL);
 		glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
@@ -1312,7 +1313,7 @@ void drawSpectatorBillboards()
 				continue;
 			}
 			pushMatrix(MODEL);
-			translate(MODEL, 5 + i * 10.0, 1.0, 5 + j * 10.0);
+			translate(MODEL, 5 + i * 10.0, 0.0f, 5 + j * 10.0);
 			scale(MODEL, 0.5, 0.5, 1);
 
 			pos[0] = 5 + i * 10.0; pos[1] = 0; pos[2] = 5 + j * 10.0;
@@ -1579,7 +1580,7 @@ void drawHUDText()
 void setupCameraLookAts()
 {
 	if (cameraFlag == 1) { //Fixed ortho camera
-		lookAt(-19.5f, 10.0f, 0, -19.5f, 0, 0 + 0.01, 0, 1, 0);
+		lookAt(-19.5f, 10.0f, 0, -19.5f, 0, 0+0.00005f, 0, 1, 0);
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 	}
 	else if (cameraFlag == 2) { //Fixed perspective camera
@@ -1612,7 +1613,16 @@ void renderScene(void) {
 	float mat[16];
 	GLfloat plano_chao[4] = { 0,1,0,0 };
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	// some GL settings
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_MULTISAMPLE);
+	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glClearStencil(0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	// load identity matrices
 	loadIdentity(VIEW);
 	loadIdentity(MODEL);
@@ -1742,7 +1752,14 @@ void renderScene(void) {
 		scale(MODEL, 1.0f, -1.0f, 1.0f);
 		glCullFace(GL_FRONT);
 		//Draw all objects but the table
-		drawObjectsButRaceTrack();
+		//Optimization: choose not to reflect nor draw the shadows of the race track cheerios
+		if (drawRaceTrackShadowsReflection == 1) {
+			drawObjects();
+		}
+		else {
+			drawObjectsButRaceTrack();
+		}
+
 		//Draw fireworks since they should reflect
 		drawFireworks();
 		glCullFace(GL_BACK);
@@ -1768,7 +1785,13 @@ void renderScene(void) {
 
 		pushMatrix(MODEL);
 		multMatrix(MODEL, mat);
-		drawObjectsButRaceTrack();
+		//Draw all objects' shadows but table and fireworks
+		if (drawRaceTrackShadowsReflection == 1) {
+			drawObjects();
+		}
+		else {
+			drawObjectsButRaceTrack();
+		}
 		popMatrix(MODEL);
 
 		glDisable(GL_STENCIL_TEST);
@@ -1850,6 +1873,9 @@ void processKeys(unsigned char key, int xx, int yy) {
 
 		case 'f': if (fogFlag == 1) { fogFlag = 0; }
 				else { fogFlag = 1; } break;
+
+		case '<': if (drawRaceTrackShadowsReflection == 1) { drawRaceTrackShadowsReflection = 0; }
+				else { drawRaceTrackShadowsReflection = 1; } break;
 		}
 	}
 	else {
@@ -1899,6 +1925,8 @@ void processKeys(unsigned char key, int xx, int yy) {
 		case 'f': if (fogFlag == 1) { fogFlag = 0; }
 				else { fogFlag = 1; } break;
 
+		case '<': if (drawRaceTrackShadowsReflection == 1) { drawRaceTrackShadowsReflection = 0; }
+				else { drawRaceTrackShadowsReflection = 1; } break;
 		}
 	}
 }
@@ -2124,7 +2152,9 @@ void init()
 	//MESA
 	objId = 0;
 	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
+	diff[3] = 0.7f;
 	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
+	diff[3] = 1.0f;
 	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
@@ -2341,15 +2371,6 @@ void init()
 	objId = 784;
 	mesh[objId].mat.texCount = texcount;
 	createQuad(2, 2);
-
-
-	// some GL settings
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_MULTISAMPLE);
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 }
 
