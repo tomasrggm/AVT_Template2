@@ -385,12 +385,9 @@ void changeSize(int w, int h) {
 	loadIdentity(PROJECTION);
 	if (cameraFlag == 1) {
 		if (w <= h)
-			ortho(-16.0, 16.0, -16.0 * (GLfloat)h / (GLfloat)w, 16.0 * (GLfloat)h / (GLfloat)w, -10, 10);
+			ortho(-32.0, 32.0, -64.0 * (GLfloat)h / (GLfloat)w, 64.0 * (GLfloat)h / (GLfloat)w, -10, 10);
 		else
-			ortho(-16.0 * (GLfloat)w / (GLfloat)h, 16.0 * (GLfloat)w / (GLfloat)h, -16.0, 16.0, -10, 10);
-
-		//ortho(-16.0f, 16.0f, -16.0f, 16.0f, 0.1f, 1000.0f);
-		//using WinX = 640, WinY = 480 aspect ratio
+			ortho(-32.0 * (GLfloat)w / (GLfloat)h, 32.0 * (GLfloat)w / (GLfloat)h, -64.0, 64.0, -10, 10);
 	}
 
 	else if (cameraFlag == 2) {
@@ -529,11 +526,13 @@ void renderScene(void) {
 	loadIdentity(MODEL);
 	// set the camera using a function similar to gluLookAt
 	if (cameraFlag == 1) { //Fixed ortho camera
-		lookAt(carX, 10.0f, carZ, carX, carY, carZ + 0.01, 0, 1, 0);
+		lookAt(-19.5f, 10.0f, 0, -19.5f, 0, 0 + 0.01, 0, 1, 0);
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 	}
 	else if (cameraFlag == 2) { //Fixed perspective camera
-		lookAt(carX, 15.0f, carZ, carX, carY, carZ + 0.01, 0, 1, 0);
+		//lookAt(carX, 15.0f, carZ, carX, carY, carZ + 0.01, 0, 1, 0);
+		//lookAt(-19.5, 0.0f, -70.0f, -19.5f, 0, 0 + 0.01, 0, 1, 0);
+		lookAt(-19.5f, 60.0f, 0, -19.5f, 0, 0 + 0.01, 0, 1, 0);
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 	}
 	else if (cameraFlag == 3) { //Movement camera
@@ -1410,16 +1409,20 @@ void renderScene(void) {
 	//Enable blending
 	glEnable(GL_BLEND);
 
-	//TREE BILLBOARDS
+	//BILLBOARDS
 	//Despite of blending, they are considered opaque so z-buffer works normally
 
 	float pos[3]; 
 	float cam[3] = { camX, camY, camZ };
 	objId = 782;
-	for (int i = -5; i < 5; i++) {
-		for (int j = -5; j < 5; j++) {
+	for (int i = -6; i < 2; i++) {
+		for (int j = -7; j < 7; j++) {
+			if (j > -7 && j < 6 && i > -6 && i < 1) {
+				continue;
+			}
 			pushMatrix(MODEL);
-			translate(MODEL, 5 + i * 10.0, 0, 5 + j * 10.0);
+			translate(MODEL, 5 + i * 10.0, 1.0, 5 + j * 10.0);
+			scale(MODEL, 0.5, 0.5, 1);
 
 			pos[0] = 5 + i * 10.0; pos[1] = 0; pos[2] = 5 + j * 10.0;
 
@@ -1511,47 +1514,13 @@ void renderScene(void) {
 
 	popMatrix(MODEL);
 
-	//VIDRO NA PISTA
-	objId = 784;
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-	glUniform4fv(loc, 1, mesh[objId].mat.specular);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
-	pushMatrix(MODEL);
-
-	translate(MODEL, 2.5f, 0.0f, -45.0f);
-	scale(MODEL, 5.0f, 5.0f, 0.1f);
-
-	// send matrices to OGL
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-	computeNormalMatrix3x3();
-	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-	// Render mesh
-	glBindVertexArray(mesh[objId].vao);
-
-	if (!shader.isProgramValid()) {
-		printf("Program Not Valid!\n");
-		exit(1);
-	}
-	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
-	popMatrix(MODEL);
-
+	//Fireworks
+	objId = 784;  //quad for particle
 	if (fireworks) {
 
 		updateParticles();
 
 		// draw fireworks particles
-		objId = 785;  //quad for particle
-
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -1918,7 +1887,7 @@ void init()
 	freeType_init(font_name);
 
 	glGenTextures(4, TextureArray);
-	Texture2D_Loader(TextureArray, "tree.tga", 0);
+	Texture2D_Loader(TextureArray, "happy-human.tga", 0);
 	Texture2D_Loader(TextureArray, "table-cloth3.jpg", 1);
 	Texture2D_Loader(TextureArray, "cloth2.jpg", 2);
 	Texture2D_Loader(TextureArray, "particle.tga", 3);
@@ -1959,9 +1928,9 @@ void init()
 	float diff5[] = { 0.0f, 0.3f, 0.0f, 1.0f };
 	float spec5[] = { 0.9f, 0.9f, 0.9f, 1.0f };
 
-	//Tree specular color
-	float tree_spec[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-	float tree_shininess = 10.0f;
+	//Billboard specular color
+	float billboard_spec[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+	float billboard_shininess = 100.0f;
 
 
 	//MESA
@@ -2160,13 +2129,13 @@ void init()
 		objId++;
 	}
 
-	//TREE BILLBOARDS
+	//BILLBOARDS
 	objId = 782;
 	//memcpy(mesh[objId].mat.ambient, amb4, 4 * sizeof(float));
 	//memcpy(mesh[objId].mat.diffuse, diff4, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, tree_spec, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, billboard_spec, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
-	mesh[objId].mat.shininess = tree_shininess;
+	mesh[objId].mat.shininess = billboard_shininess;
 	mesh[objId].mat.texCount = texcount;
 	createQuad(6.0, 6.0);
 
@@ -2180,20 +2149,8 @@ void init()
 	mesh[objId].mat.texCount = texcount;
 	createCube();
 
-	//VIDRO NA PISTA
-	diff1[3] = 0.5f;
-	objId = 784;
-	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec1, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
-	mesh[objId].mat.shininess = shininess;
-	mesh[objId].mat.texCount = texcount;
-	createCube();
-	diff1[3] = 1.0f;
-
 	//PARTICULAS
-	objId = 785;
+	objId = 784;
 	mesh[objId].mat.texCount = texcount;
 	createQuad(2, 2);
 
