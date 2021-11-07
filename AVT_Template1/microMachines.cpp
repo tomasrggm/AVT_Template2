@@ -72,7 +72,7 @@ unsigned int FrameCount = 0;
 
 VSShaderLib shader, shaderText;
 
-struct MyMesh mesh[785];
+struct MyMesh mesh[787];
 int objId=0; //id of the object mesh - to be used as index of mesh: mesh[objID] means the current mesh
 
 
@@ -88,6 +88,7 @@ extern float mNormal3x3[9];
 GLint pvm_uniformId;
 GLint vm_uniformId;
 GLint normal_uniformId;
+GLint model_uniformId;
 GLint lPos_uniformId;
 GLint lPos_uniformId2;
 GLint lPos_uniformId3;
@@ -101,11 +102,12 @@ GLint lPos_uniformId7;
 GLint lDir_uniformId;
 GLint lAngle_uniformId;
 GLint lPos_uniformId8;
+GLint view_uniformId;
 
-GLint tex_loc, tex_loc1, tex_loc2;
+GLint tex_loc, tex_loc1, tex_loc2, tex_cube_loc;
 GLint texMode_uniformId;
 
-GLuint TextureArray[3];
+GLuint TextureArray[4];
 GLuint FlareTextureArray[5];
 
 //Flare effect
@@ -468,11 +470,11 @@ void renderScene(void) {
 		//glUniform4fv(lPos_uniformId, 1, lightPos); //efeito capacete do mineiro, ou seja lighPos foi definido em eye coord 
 
 		
-		if (lightFlag == 1) {
+		if (lightFlag == 1) { //flag da luz direcional
 			float res2[4] = { 1.0,1.0,1.0,0.0 };
 			glUniform4fv(lStr_uniformId, 1, res2);
 		}
-		else {
+		else { // flag das luzes pontuais
 			float res2[4] = { 0.0,0.0,0.0,0.0 };
 			glUniform4fv(lStr_uniformId, 1, res2);
 		}
@@ -484,7 +486,7 @@ void renderScene(void) {
 			float res2[4] = { 0.0,0.0,0.0,0.0 };
 			glUniform4fv(lStr_uniformId2, 1, res2);
 		}
-		if (lightFlag3 == 1) {
+		if (lightFlag3 == 1) { // flag dos holofotes
 			float res2[4] = { 1.0,1.0,1.0,1.0 };
 			glUniform4fv(lStr_uniformId3, 1, res2);
 		}
@@ -543,9 +545,13 @@ void renderScene(void) {
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, TextureArray[2]);
 
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, TextureArray[3]);
+
 		glUniform1i(tex_loc, 0);
 		glUniform1i(tex_loc1, 1);
 		glUniform1i(tex_loc2, 2);
+		glUniform1i(tex_cube_loc, 3);
 
 	//MESA
 	objId = 0;
@@ -1408,6 +1414,46 @@ void renderScene(void) {
 
 
 
+	objId = 786;
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	translate(MODEL, 10.0f, 2.0f, -45.0f);
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniform1i(texMode_uniformId, 5);
+	glUniformMatrix4fv(view_uniformId, 1, GL_FALSE, mMatrix[VIEW]);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
+	glDisable(GL_BLEND);
+	glDepthMask(GL_TRUE);
+
+
+
+
+	objId = 784;
 	int flarePos[2];
 	int m_viewport[4];
 	glGetIntegerv(GL_VIEWPORT, m_viewport);
@@ -1431,6 +1477,44 @@ void renderScene(void) {
 	render_flare(&AVTflare, flarePos[0], flarePos[1], m_viewport);
 	popMatrix(PROJECTION);
 	popMatrix(VIEW);
+
+
+	// Render Sky Box
+	objId = 785;
+	glUniform1i(texMode_uniformId, 4);
+
+	//it won't write anything to the zbuffer; all subsequently drawn scenery to be in front of the sky box. 
+	glDepthMask(GL_FALSE);
+	glFrontFace(GL_CW); // set clockwise vertex order to mean the front
+
+	pushMatrix(MODEL);
+	pushMatrix(VIEW);  //se quiser anular a translação
+
+	//  Fica mais realista se não anular a translação da câmara 
+	// Cancel the translation movement of the camera - de acordo com o tutorial do Antons
+	mMatrix[VIEW][12] = 0.0f;
+	mMatrix[VIEW][13] = 0.0f;
+	mMatrix[VIEW][14] = 0.0f;
+
+	scale(MODEL, 100.0f, 100.0f, 100.0f);
+	translate(MODEL, -0.5f, -0.5f, -0.5f);
+
+	// send matrices to OGL
+	glUniformMatrix4fv(model_uniformId, 1, GL_FALSE, mMatrix[MODEL]); //Transformação de modelação do cubo unitário para o "Big Cube"
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+
+	glBindVertexArray(mesh[objId].vao);
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+	popMatrix(MODEL);
+	popMatrix(VIEW);
+
+	glFrontFace(GL_CCW); // restore counter clockwise vertex order to mean the front
+	glDepthMask(GL_TRUE);
+
+
+
 
 	renderedFlag = 1;
 	
@@ -1460,6 +1544,11 @@ void renderScene(void) {
 	popMatrix(MODEL);
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
+
+
+
+
+	
 
 
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -1629,6 +1718,8 @@ GLuint setupShaders() {
 	pvm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_pvm");
 	vm_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_viewModel");
 	normal_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_normal");
+	model_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_Model");
+	view_uniformId = glGetUniformLocation(shader.getProgramIndex(), "m_View");
 	lPos_uniformId = glGetUniformLocation(shader.getProgramIndex(), "l_pos[0]");
 	lPos_uniformId2 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[1]");
 	lPos_uniformId3 = glGetUniformLocation(shader.getProgramIndex(), "l_pos[2]");
@@ -1641,6 +1732,7 @@ GLuint setupShaders() {
 	tex_loc = glGetUniformLocation(shader.getProgramIndex(), "texmap");
 	tex_loc1 = glGetUniformLocation(shader.getProgramIndex(), "texmap1");
 	tex_loc2 = glGetUniformLocation(shader.getProgramIndex(), "texmap2");
+	tex_cube_loc = glGetUniformLocation(shader.getProgramIndex(), "cubeMap");
 
 	
 	printf("InfoLog for MicroMachines Project\n%s\n\n", shader.getAllInfoLogs().c_str());
@@ -1680,6 +1772,9 @@ void init()
 	Texture2D_Loader(FlareTextureArray, "hxgn.tga", 2);
 	Texture2D_Loader(FlareTextureArray, "ring.tga", 3);
 	Texture2D_Loader(FlareTextureArray, "sun.tga", 4);
+
+	const char* filenames[] = { "posx.jpg", "negx.jpg", "posy.jpg", "negy.jpg", "posz.jpg", "negz.jpg" };
+	TextureCubeMap_Loader(TextureArray, filenames, 3);
 
 	
 	//Cream
@@ -1937,11 +2032,33 @@ void init()
 	createQuad(1, 1);
 	loadFlareFile(&AVTflare, "flare.txt");
 
+	objId = 785;
+	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
+	mesh[objId].mat.shininess = shininess;
+	mesh[objId].mat.texCount = texcount;
+	createCube();
+
+
+	objId = 786;
+	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
+	mesh[objId].mat.shininess = shininess;
+	mesh[objId].mat.texCount = texcount;
+	createCube();
+
 
 	// some GL settings
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);	// cull face
+	glCullFace(GL_BACK);		 // cull back face
+	glFrontFace(GL_CCW); // set counter-clockwise vertex order to mean the front
 	glEnable(GL_MULTISAMPLE);
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
