@@ -18,6 +18,8 @@ void drawHUDText();
 
 void setupCameraLookAts();
 
+void drawCarRearView();
+
 void drawObjects();
 
 void drawFireworks();

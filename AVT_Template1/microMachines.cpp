@@ -403,6 +403,47 @@ void changeSize(int w, int h) {
 	else if (cameraFlag == 3) {
 		perspective(70.13f, ratio, 0.1f, 1000.0f);
 	}
+
+	else if (cameraFlag == 4) {
+		/* create a diamond shaped stencil area */
+		loadIdentity(PROJECTION);
+		if (w <= h)
+			ortho(-2.0, 2.0, -2.0 * (GLfloat)h / (GLfloat)w,
+				2.0 * (GLfloat)h / (GLfloat)w, -10, 10);
+		else
+			ortho(-2.0 * (GLfloat)w / (GLfloat)h,
+				2.0 * (GLfloat)w / (GLfloat)h, -2.0, 2.0, -10, 10);
+
+		// load identity matrices for Model-View
+		loadIdentity(VIEW);
+		loadIdentity(MODEL);
+
+		glUseProgram(shader.getProgramIndex());
+
+		//não vai ser preciso enviar o material pois o cubo não é desenhado
+
+		//rotate(MODEL, 45.0f, 0.0, 0.0, 1.0);
+		//translate(MODEL, -0.5f, -0.5f, -0.5f);
+		
+		// send matrices to OGL
+		computeDerivedMatrix(PROJ_VIEW_MODEL);
+		//glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+		glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+		computeNormalMatrix3x3();
+		glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+		glClear(GL_STENCIL_BUFFER_BIT);
+
+		glStencilFunc(GL_NEVER, 0x1, 0x1);
+		glStencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
+
+		glBindVertexArray(mesh[785].vao);
+		glDrawElements(mesh[785].type, mesh[785].numIndexes, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		loadIdentity(PROJECTION);
+		perspective(60.0f, ratio, 0.1f, 1000.0f);
+	}
 }
 
 
@@ -1302,6 +1343,7 @@ void drawSpectatorBillboards()
 {
 	GLint loc;
 	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//Despite of blending, they are considered opaque so z-buffer works normally
 
 	float pos[3];
@@ -1375,6 +1417,7 @@ void drawCarGlass()
 	//Enable blending and make Z-buffer read-only
 	glEnable(GL_BLEND);
 	glDepthMask(GL_FALSE);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	objId = 783;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
@@ -1414,6 +1457,46 @@ void drawCarGlass()
 	//Re-enable depth-test writing and disable blending
 	glDisable(GL_BLEND);
 	glDepthMask(GL_TRUE);
+}
+
+void drawCarRearView()
+{
+	GLint loc;
+
+	objId = 785;
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	translate(MODEL, carX, carY, carZ);
+	rotate(MODEL, angulo, 0, 1.0f, 0);
+	translate(MODEL, -0.25f, 1.0f, 0.4f);
+	scale(MODEL, 0.50f, 0.15f, 0.1f);
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
 }
 
 void drawFireworks()
@@ -1599,6 +1682,18 @@ void setupCameraLookAts()
 
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 	}
+
+	else if (cameraFlag == 4) { //Movement camera
+		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
+
+		lookAt(carX, carY + 1.0, carZ - 1.0, carX, carY + 1.0, carZ, 0, 1, 0);
+
+		//Translate camera to car's coordinates, rotate, and return back to original position
+		translate(VIEW, carX, carY, carZ);
+		rotate(VIEW, -angulo, 0.0, 1.0, 0.0);
+		//scale(VIEW, 1.0, 1.0, -1.0);
+		translate(VIEW, -carX, -carY, -carZ);
+	}
 }
 
 void renderScene(void) {
@@ -1617,7 +1712,7 @@ void renderScene(void) {
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_MULTISAMPLE);
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -1733,8 +1828,7 @@ void renderScene(void) {
 		glStencilFunc(GL_NEVER, 0x1, 0x1);
 		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
 
-		// Fill stencil buffer with Ground shape; never rendered into color buffer
-		//TABLE
+		// Fill stencil buffer with the table; never rendered into color buffer
 		drawTable();
 
 		glUniform1i(shadowMode_uniformId, 0);  //iluminação phong
@@ -1755,11 +1849,12 @@ void renderScene(void) {
 		//Optimization: choose not to reflect nor draw the shadows of the race track cheerios
 		if (drawRaceTrackShadowsReflection == 1) {
 			drawObjects();
+			drawCarRearView();
 		}
 		else {
 			drawObjectsButRaceTrack();
+			drawCarRearView();
 		}
-
 		//Draw fireworks since they should reflect
 		drawFireworks();
 		glCullFace(GL_BACK);
@@ -1785,12 +1880,21 @@ void renderScene(void) {
 
 		pushMatrix(MODEL);
 		multMatrix(MODEL, mat);
-		//Draw all objects' shadows but table and fireworks
+		//Draw all objects' shadows but table, fireworks and transparent objects
 		if (drawRaceTrackShadowsReflection == 1) {
-			drawObjects();
+			drawCar();
+			drawOranges();
+			drawButters();
+			drawRaceTrackCheerios();
+			drawSpectatorBillboards();
+			drawCarRearView();
 		}
 		else {
-			drawObjectsButRaceTrack();
+			drawCar();
+			drawOranges();
+			drawButters();
+			drawSpectatorBillboards();
+			drawCarRearView();
 		}
 		popMatrix(MODEL);
 
@@ -1801,11 +1905,13 @@ void renderScene(void) {
 		//render the geometry
 		glUniform1i(shadowMode_uniformId, 0);
 		drawObjects();
+		drawCarRearView();
 		drawFireworks();
 	}
 
 	else {
 		drawTable();
+		drawCarRearView();
 		drawObjects();
 		drawFireworks();
 	}
@@ -1843,6 +1949,7 @@ void processKeys(unsigned char key, int xx, int yy) {
 		case '1': cameraFlag = 1; break;
 		case '2': cameraFlag = 2; break;
 		case '3': cameraFlag = 3; break;
+		case '4': cameraFlag = 4; break;
 
 		//Car Movement keys
 		case 'q': if (accelerationIncrement <= 10.0f && pauseFlag == 0) { accelerationIncrement += 1.0f; } break; //Forwards
@@ -1894,6 +2001,7 @@ void processKeys(unsigned char key, int xx, int yy) {
 		case '1': cameraFlag = 1; break;
 		case '2': cameraFlag = 2; break;
 		case '3': cameraFlag = 3; break;
+		case '4': cameraFlag = 4; break;
 
 		//Car Movement keys
 		case 'w': if (accelerationIncrement <= 10.0f && pauseFlag == 0) { accelerationIncrement += 1.0f; } break; //Forwards
@@ -2149,10 +2257,10 @@ void init()
 	float billboard_shininess = 100.0f;
 
 
-	//MESA
+	//TABLE
 	objId = 0;
 	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
-	diff[3] = 0.7f;
+	diff[3] = 0.5f;
 	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
 	diff[3] = 1.0f;
 	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
@@ -2161,7 +2269,7 @@ void init()
 	mesh[objId].mat.texCount = texcount;
 	createCube();
 
-	//CARRO
+	//CAR
 	objId = 1;
 	//creation of Mymesh array with VAO Geometry and Material
 	//myMeshes = createMeshFromAssimp(scene);
@@ -2173,7 +2281,7 @@ void init()
 	mesh[objId].mat.texCount = texcount;
 	createCylinder(1.0f, 0.3f, 64);
 
-	//RODAS
+	//WHEELS
 	objId = 2;
 	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
@@ -2210,7 +2318,7 @@ void init()
 	mesh[objId].mat.texCount = texcount;
 	createTorus(0.02f, 0.3f, 64, 64);
 
-	//LARANJAS
+	//ORANGES
 	objId = 6;
 	for (int i = 0; i < 4; i++) {
 		memcpy(mesh[objId].mat.ambient, amb2, 4 * sizeof(float));
@@ -2223,7 +2331,7 @@ void init()
 		objId++;
 	}
 
-	//FOLHAS
+	//LEAFS
 	objId = 10;
 	for (int i = 0; i < 4; i++) {
 		memcpy(mesh[objId].mat.ambient, amb5, 4 * sizeof(float));
@@ -2236,7 +2344,7 @@ void init()
 		objId++;
 	}
 
-	//MANTEIGAS
+	//BUTTERS
 	objId = 14;
 	for (int i = 0; i < 4; i++) {
 		memcpy(mesh[objId].mat.ambient, amb3, 4 * sizeof(float));
@@ -2250,7 +2358,7 @@ void init()
 	}
 	
 
-	//Cheerios
+	//RACETRACK CHEERIOS
 	objId = 18;
 	for (int i = -50; i < 48; ++i) {
 		memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
@@ -2357,7 +2465,7 @@ void init()
 	mesh[objId].mat.texCount = texcount;
 	createQuad(6.0, 6.0);
 
-	//VIDRO DO CARRO
+	//CAR GLASS
 	objId = 783;
 	memcpy(mesh[objId].mat.ambient, amb4, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.diffuse, diff4, 4 * sizeof(float));
@@ -2367,10 +2475,20 @@ void init()
 	mesh[objId].mat.texCount = texcount;
 	createCube();
 
-	//PARTICULAS
+	//PARTICLES
 	objId = 784;
 	mesh[objId].mat.texCount = texcount;
 	createQuad(2, 2);
+
+	//CAR REARVIEW MIRROR
+	objId = 785;
+	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
+	mesh[objId].mat.shininess = shininess;
+	mesh[objId].mat.texCount = texcount;
+	createCube();
 
 }
 
