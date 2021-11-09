@@ -81,6 +81,9 @@ int billboardType = 1; //By default, it starts on cheated cylindrical
 
 float torusX[633];
 float torusZ[633];
+float torusXBackup[633];
+float torusZBackup[633];
+
 int renderedFlag = 0;
 int pauseFlag = 0;
 int vidas = 5;
@@ -191,6 +194,24 @@ float lightDir[4] = { 0.0f,0.0f,1.0f,1.0f };
 const std::string font_name = "fonts/arial.ttf";
 
 
+void restart() {
+	for (int i = 0; i < 4; i++) {
+		orangeX[i] = 0;
+		orangeZ[i] = (rand() % 100) - 45;
+		orangeSpeed[i] = 0;
+
+	}
+	carX = 5;
+	carZ = -48;
+	accelerationIncrement = 0;
+	vidas = 5;
+	pontos = 0;
+	angulo = 0;
+	for (int i = 0; i < 633; i++) {
+		torusX[i] = torusXBackup[i];
+		torusZ[i] = torusZBackup[i];
+	}
+}
 
 void timer(int value)
 {
@@ -268,6 +289,9 @@ void colision(int value) {
 				carZ = -48;
 				accelerationIncrement = 0;
 				vidas--;
+				if (vidas == 0) {
+					restart();
+				}
 			}
 		}
 
@@ -1072,6 +1096,8 @@ void renderScene(void) {
 	if (renderedFlag == 0) {
 		torusX[629] = 0.5f;
 		torusZ[629] = 0;
+		torusXBackup[629] = 0.5f;
+		torusZBackup[629] = 0;
 	}
 	translate(MODEL, torusX[629], 1.0f, torusX[629]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -1108,6 +1134,9 @@ void renderScene(void) {
 	if (renderedFlag == 0) {
 		torusX[630] = 4.5f;
 		torusZ[630] = 20.0f;
+		torusXBackup[630] = 4.5f;
+		torusZBackup[630] = 20.0f;
+
 	}
 	translate(MODEL, torusX[630], 1.0f, torusZ[630]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -1144,6 +1173,8 @@ void renderScene(void) {
 	if (renderedFlag == 0) {
 		torusX[631] = 4.5f;
 		torusZ[631] = -25.0f;
+		torusXBackup[631] = 4.5f;
+		torusZBackup[631] = -25.0f;
 	}
 	translate(MODEL, torusX[631], 1.0f, torusZ[631]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -1180,6 +1211,8 @@ void renderScene(void) {
 	if (renderedFlag == 0) {
 		torusX[632] = 0.5f;
 		torusZ[632] = -40.0f;
+		torusXBackup[632] = 0.5f;
+		torusZBackup[632] = -40.0f;
 	}
 	translate(MODEL, torusX[632], 1.0f, torusZ[632]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -1221,6 +1254,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 50] = 1.0f;
 			torusZ[i + 50] = 1.5f + i;
+			torusXBackup[i + 50] = 1.0f;
+			torusZBackup[i + 50] = 1.5f + i;
 		}
 		translate(MODEL, torusX[i + 50], 1.15f, torusZ[i + 50]);
 		// send matrices to OGL
@@ -1260,6 +1295,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 58 + 98] = 9.0f;
 			torusZ[i + 58 + 98] = 1.5f + i;
+			torusXBackup[i + 58 + 98] = 9.0f;
+			torusZBackup[i + 58 + 98] = 1.5f + i;
 		}
 		
 		translate(MODEL, torusX[i + 58 + 98], 1.15f, torusZ[i + 58 + 98]);
@@ -1302,6 +1339,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 50 + 213] = 0.0f + i;
 			torusZ[i + 50 + 213] = 57.5f;
+			torusXBackup[i + 50 + 213] = 0.0f + i;
+			torusZBackup[i + 50 + 213] = 57.5f;
 		}
 		translate(MODEL, torusX[i + 50 + 213], 1.15f, torusZ[i + 50 + 213]);
 		// send matrices to OGL
@@ -1343,6 +1382,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 50 + 273] = 0.0f + i;
 			torusZ[i + 50 + 273] = -57.5f;
+			torusXBackup[i + 50 + 273] = 0.0f + i;
+			torusZBackup[i + 50 + 273] = -57.5f;
 		}
 		translate(MODEL, torusX[i + 50 + 273], 1.15f, torusZ[i + 50 + 273]);
 		// send matrices to OGL
@@ -1383,6 +1424,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 58 + 333] = -50.0f;
 			torusZ[i + 58 + 333] = 1.5f + i;
+			torusXBackup[i + 58 + 333] = -50.0f;
+			torusZBackup[i + 58 + 333] = 1.5f + i;
 		}
 		translate(MODEL, torusX[i + 58 + 333], 1.15f, torusZ[i + 58 + 333]);
 		// send matrices to OGL
@@ -1422,6 +1465,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 40 + 448] = 0 + i;
 			torusZ[i + 40 + 448] = -49.5f;
+			torusXBackup[i + 40 + 448] = 0 + i;
+			torusZBackup[i + 40 + 448] = -49.5f;
 		}
 		translate(MODEL, torusX[i + 40 + 448], 1.15f, torusZ[i + 40 + 448]);
 		// send matrices to OGL
@@ -1460,6 +1505,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 40 + 489] = 0 + i;
 			torusZ[i + 40 + 489] = 49.5f;
+			torusXBackup[i + 40 + 489] = 0 + i;
+			torusZBackup[i + 40 + 489] = 49.5f;
 		}
 		translate(MODEL, torusX[i + 40 + 489], 1.15f, torusZ[i + 40 + 489]);
 		// send matrices to OGL
@@ -1501,6 +1548,8 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 50 + 530] = -40;
 			torusZ[i + 50 + 530] = 1.5f + i;
+			torusXBackup[i + 50 + 530] = -40;
+			torusZBackup[i + 50 + 530] = 1.5f + i;
 		}
 		translate(MODEL, torusX[i + 50 + 530], 1.15f, torusZ[i + 50 + 530]);
 		// send matrices to OGL
@@ -1868,6 +1917,8 @@ void renderScene(void) {
 	glDepthMask(GL_FALSE);
 	
 	//VIDRO DO CARRO
+	glEnable(GL_BLEND);
+	glDepthMask(GL_FALSE);
 	objId = 789;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
@@ -1903,6 +1954,7 @@ void renderScene(void) {
 
 	popMatrix(MODEL);
 
+
 	//VIDRO NA PISTA
 	objId = 790;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
@@ -1936,6 +1988,9 @@ void renderScene(void) {
 	glBindVertexArray(0);
 
 	popMatrix(MODEL);
+
+	glDisable(GL_BLEND);
+	glDepthMask(GL_TRUE);
 
 	if (fireworks) {
 
@@ -2114,6 +2169,7 @@ void processKeys(unsigned char key, int xx, int yy) {
 
 		case 'f': if (fogFlag == 1) { fogFlag = 0; }
 				else { fogFlag = 1; } break;
+		case 'r': restart(); break;
 		}
 	}
 	else {
