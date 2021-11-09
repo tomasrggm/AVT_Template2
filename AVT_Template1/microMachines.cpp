@@ -96,7 +96,7 @@ VSShaderLib shader, shaderText;
 
 bool normalMapKey = TRUE; // by default if there is a normal map then bump effect is implemented. press key "b" to enable/disable normal mapping 
 
-struct MyMesh mesh[786];
+struct MyMesh mesh[787];
 vector<struct MyMesh> myMeshes;
 int objId=0; //id of the object mesh - to be used as index of mesh: mesh[objID] means the current mesh
 
@@ -317,8 +317,6 @@ void colision(int value) {
 }
 
 
-
-
 void move(int value) {
 	if (pauseFlag == 0) {
 		if (angulo > 360 || angulo < -360) {
@@ -404,44 +402,7 @@ void changeSize(int w, int h) {
 		perspective(70.13f, ratio, 0.1f, 1000.0f);
 	}
 
-	else if (cameraFlag == 4) {
-		/* create a diamond shaped stencil area */
-		loadIdentity(PROJECTION);
-		if (w <= h)
-			ortho(-2.0, 2.0, -2.0 * (GLfloat)h / (GLfloat)w,
-				2.0 * (GLfloat)h / (GLfloat)w, -10, 10);
-		else
-			ortho(-2.0 * (GLfloat)w / (GLfloat)h,
-				2.0 * (GLfloat)w / (GLfloat)h, -2.0, 2.0, -10, 10);
-
-		// load identity matrices for Model-View
-		loadIdentity(VIEW);
-		loadIdentity(MODEL);
-
-		glUseProgram(shader.getProgramIndex());
-
-		//não vai ser preciso enviar o material pois o cubo não é desenhado
-
-		//rotate(MODEL, 45.0f, 0.0, 0.0, 1.0);
-		//translate(MODEL, -0.5f, -0.5f, -0.5f);
-		
-		// send matrices to OGL
-		computeDerivedMatrix(PROJ_VIEW_MODEL);
-		//glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-		glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-		computeNormalMatrix3x3();
-		glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-		glClear(GL_STENCIL_BUFFER_BIT);
-
-		glStencilFunc(GL_NEVER, 0x1, 0x1);
-		glStencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
-
-		glBindVertexArray(mesh[785].vao);
-		glDrawElements(mesh[785].type, mesh[785].numIndexes, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-
-		loadIdentity(PROJECTION);
+	else if (cameraFlag == 4 || cameraFlag == 5) {
 		perspective(60.0f, ratio, 0.1f, 1000.0f);
 	}
 }
@@ -1499,6 +1460,55 @@ void drawCarRearView()
 	popMatrix(MODEL);
 }
 
+void drawCarRearViewMirror()
+{
+	GLint loc;
+
+	objId = 786;
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	/*
+	translate(MODEL, carX, carY, carZ);
+	rotate(MODEL, angulo, 0, 1.0f, 0);
+	translate(MODEL, -0.25f, 1.0f, 0.4f);
+	scale(MODEL, 0.50f, 0.15f, 0.1f);
+	*/
+
+	translate(MODEL, carX, carY, carZ);
+	rotate(MODEL, angulo, 0, 1.0f, 0);
+	translate(MODEL, -0.235f, 1.015f, 0.39f);
+	scale(MODEL, 0.47f, 0.12f, 0.1f);
+	//scale(MODEL, 0.80f, 0.12f, 0.1f);
+
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
+}
+
 void drawFireworks()
 {
 	GLint loc;
@@ -1683,7 +1693,7 @@ void setupCameraLookAts()
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 	}
 
-	else if (cameraFlag == 4) { //Movement camera
+	else if (cameraFlag == 4) { //Driver's camera
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 
 		lookAt(carX, carY + 1.0, carZ - 1.0, carX, carY + 1.0, carZ, 0, 1, 0);
@@ -1691,7 +1701,18 @@ void setupCameraLookAts()
 		//Translate camera to car's coordinates, rotate, and return back to original position
 		translate(VIEW, carX, carY, carZ);
 		rotate(VIEW, -angulo, 0.0, 1.0, 0.0);
-		//scale(VIEW, 1.0, 1.0, -1.0);
+		translate(VIEW, -carX, -carY, -carZ);
+	}
+
+	else if (cameraFlag == 5) { //Rear-view Camera
+		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
+
+		//lookAt(carX, carY + 1.0, carZ - 1.0, carX, carY + 1.0, carZ, 0, 1, 0);
+		lookAt(carX, carY + 1.0, carZ + 0.5, carX, carY + 1.0, carZ, 0, 1, 0);
+
+		//Translate camera to car's coordinates, rotate, and return back to original position
+		translate(VIEW, carX, carY, carZ);
+		rotate(VIEW, -angulo, 0.0, 1.0, 0.0);
 		translate(VIEW, -carX, -carY, -carZ);
 	}
 }
@@ -1906,13 +1927,55 @@ void renderScene(void) {
 		glUniform1i(shadowMode_uniformId, 0);
 		drawObjects();
 		drawCarRearView();
+		//drawCarRearViewMirror();
 		drawFireworks();
+
+		//Rear-View
+		if (cameraFlag == 4) {
+			glClearStencil(0);
+			glClear(GL_STENCIL_BUFFER_BIT);
+			
+			//Limit stencil to rear-view mirror
+			glEnable(GL_STENCIL_TEST);
+			glStencilFunc(GL_NEVER, 0x1, 0x1);
+			glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+			//drawCarGlass();
+
+			//glDisable(GL_DEPTH_TEST);
+			drawCarRearViewMirror();
+			//glEnable(GL_DEPTH_TEST);
+
+			//Change to rear-view camera
+			loadIdentity(VIEW);
+			loadIdentity(MODEL);
+			cameraFlag = 5;
+			setupCameraLookAts();
+
+			//Draw objects behind car in stencil
+			glStencilFunc(GL_EQUAL, 0x1, 0x1);
+			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+			drawCar();
+			drawOranges();
+			drawButters();
+			//drawRaceTrackCheerios(); //We can never really see them so why bother to render them?
+			drawSpectatorBillboards();
+			//drawCarGlass(); //Same idea
+			drawFireworks();
+
+			//Reset camera back to original position
+			cameraFlag = 4;
+			setupCameraLookAts();
+
+			glDisable(GL_STENCIL_TEST);
+			//glEnable(GL_DEPTH_TEST);
+		}
 	}
 
 	else {
 		drawTable();
-		drawCarRearView();
 		drawObjects();
+		drawCarRearView();
 		drawFireworks();
 	}
 
@@ -1950,6 +2013,7 @@ void processKeys(unsigned char key, int xx, int yy) {
 		case '2': cameraFlag = 2; break;
 		case '3': cameraFlag = 3; break;
 		case '4': cameraFlag = 4; break;
+		case '5': cameraFlag = 5; break;
 
 		//Car Movement keys
 		case 'q': if (accelerationIncrement <= 10.0f && pauseFlag == 0) { accelerationIncrement += 1.0f; } break; //Forwards
@@ -2002,6 +2066,7 @@ void processKeys(unsigned char key, int xx, int yy) {
 		case '2': cameraFlag = 2; break;
 		case '3': cameraFlag = 3; break;
 		case '4': cameraFlag = 4; break;
+		case '5': cameraFlag = 5; break;
 
 		//Car Movement keys
 		case 'w': if (accelerationIncrement <= 10.0f && pauseFlag == 0) { accelerationIncrement += 1.0f; } break; //Forwards
@@ -2480,11 +2545,21 @@ void init()
 	mesh[objId].mat.texCount = texcount;
 	createQuad(2, 2);
 
-	//CAR REARVIEW MIRROR
+	//CAR REAR-VIEW
 	objId = 785;
 	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
+	mesh[objId].mat.shininess = shininess;
+	mesh[objId].mat.texCount = texcount;
+	createCube();
+
+	//CAR REAR-VIEW MIRROR
+	objId = 786;
+	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec1, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
