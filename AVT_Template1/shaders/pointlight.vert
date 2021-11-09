@@ -5,8 +5,9 @@ uniform mat4 m_viewModel;
 uniform mat3 m_normal;
 
 uniform vec4 l_pos[8];
+uniform bool normalMap;
 
-in vec4 normal;    //por causa do gerador de geometria
+in vec4 normal, tangent, bitangent;    //por causa do gerador de geometria
 in vec4 position;
 in vec4 texCoord;
 
@@ -20,12 +21,35 @@ out Data {
 out vec4 pos;
 
 void main () {
+	
+	vec3 n, t, b;
+	vec3 lightDir, eyeDir;
+	vec3 aux;
 
 	pos = m_viewModel * position;
 	for(int i = 0; i < 8; ++i) {
-		DataOut[i].normal = normalize(m_normal * normal.xyz);
-		DataOut[i].lightDir = vec3(l_pos[i] - pos);
-		DataOut[i].eye = vec3(-pos);
+		n = normalize(m_normal * normal.xyz);
+		lightDir = vec3(l_pos[i] - pos);
+		eyeDir = vec3(-pos);
+		
+		if(normalMap)  {  //transform eye and light vectors by tangent basis
+			t = normalize(m_normal * tangent.xyz);
+			b = normalize(m_normal * bitangent.xyz);
+
+			aux.x = dot(lightDir, t);
+			aux.y = dot(lightDir, b);
+			aux.z = dot(lightDir, n);
+			lightDir = normalize(aux);
+
+			aux.x = dot(eyeDir, t);
+			aux.y = dot(eyeDir, b);
+			aux.z = dot(eyeDir, n);
+			eyeDir = normalize(aux);
+		}
+
+		DataOut[i].normal = n;
+		DataOut[i].lightDir = lightDir;
+		DataOut[i].eye = eyeDir;
 		DataOut[i].tex_coord = texCoord.st;
 	}
 

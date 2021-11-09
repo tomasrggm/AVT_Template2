@@ -11,10 +11,21 @@ struct Materials {
 	int texCount;
 };
 
+uniform bool normalMap;  //for normal mapping
+uniform bool specularMap;
+uniform int diffMapCount;
+
+vec4 diff, auxSpec;
+
 float l_spotCutOff = 0.720f;
 vec4 l_spotDir = vec4(0.0,0.0,-1.0,1.0);
 
 float density = 0.05;
+
+uniform	sampler2D texUnitDiff;
+uniform	sampler2D texUnitDiff1;
+uniform	sampler2D texUnitSpec;
+uniform	sampler2D texUnitNormalMap;
 
 uniform sampler2D texmap; //tree
 uniform sampler2D texmap1; //table-cloth
@@ -39,6 +50,7 @@ in vec4 pos;
 
 void main() {
 	vec4 spec = vec4(0.0);
+	vec3 n;
 	vec4 accumulatedValue = vec4(0.0);
 	vec4 texel = vec4(0.0);
 	vec4 texel1 = vec4(0.0);
@@ -47,37 +59,60 @@ void main() {
 
 	for(int i = 0; i < 8; ++i) {
 		if(i < 6) {
-			vec3 n = normalize(DataIn[i].normal);
+
+			if(normalMap)
+				n = normalize(2.0 * texture(texUnitNormalMap, DataIn[i].tex_coord).rgb - 1.0);  //normal in tangent space
+			else
+				n = normalize(DataIn[i].normal);
+
+			//If bump mapping, normalMap == TRUE, then lightDir and eye vectores come from vertex shader in tangent space
 			vec3 l = normalize(DataIn[i].lightDir);
 			vec3 e = normalize(DataIn[i].eye);
 
 			float intensity = max(dot(n,l), 0.0);
+			
+			if(mat.texCount == 0) {
+				diff = mat.diffuse;
+				auxSpec = mat.specular;
+			}
+			else {
+				if(diffMapCount == 0)
+					diff = mat.diffuse;
+				else if(diffMapCount == 1)
+					diff = mat.diffuse * texture(texUnitDiff, DataIn[i].tex_coord);
+				else
+					diff = mat.diffuse * texture(texUnitDiff, DataIn[i].tex_coord) * texture(texUnitDiff1, DataIn[i].tex_coord);
 
+				if(specularMap) 
+					auxSpec = mat.specular * texture(texUnitSpec, DataIn[i].tex_coord);
+				else
+					auxSpec = mat.specular;
+			}
 	
 			if (intensity > 0.0) {
 
 				vec3 h = normalize(l + e);
 				float intSpec = max(dot(h,n), 0.0);
-				spec = mat.specular * pow(intSpec, mat.shininess);
+				spec = auxSpec * pow(intSpec, mat.shininess);
 				if(texMode == 1) {
 					texel1 = texture(texmap1, DataIn[i].tex_coord);
 					texel2 = texture(texmap2, DataIn[i].tex_coord);
-					accumulatedValue +=(spec + intensity*mat.diffuse*texel1*texel2)* luzDifusa;
+					accumulatedValue +=(spec + intensity*diff*texel1*texel2)* luzDifusa;
 				}
 				else if(texMode == 2) {
 					texel = texture(texmap, DataIn[i].tex_coord);
 					if(texel.a == 0.0) discard;
 					else {
-						accumulatedValue += (spec + intensity*mat.diffuse*texel) * luzDifusa;
+						accumulatedValue += (spec + intensity*diff*texel) * luzDifusa;
 						accumulatedValue[3] += texel.a;
 					}
 				}
 				else if(texMode == 3) {
 						texel3 = texture(texmap3, DataIn[i].tex_coord);
-						accumulatedValue += (spec + intensity*mat.diffuse*texel3) * luzDifusa;
+						accumulatedValue += (spec + intensity*diff*texel3) * luzDifusa;
 					}
 				else {
-					accumulatedValue +=(spec + intensity*mat.diffuse)* luzDifusa;
+					accumulatedValue +=(spec + intensity*diff)* luzDifusa;
 				}
 				
 			}
@@ -94,26 +129,26 @@ void main() {
 					vec3 eye = normalize(DataIn[i].eye);
 					vec3 h = normalize(ld + eye);
 					float intSpec = max(dot(h,n), 0.0);
-					spec = mat.specular * pow(intSpec, mat.shininess);
+					spec = auxSpec * pow(intSpec, mat.shininess);
 					if(texMode == 1) {
 						texel1 = texture(texmap1, DataIn[i].tex_coord);
 						texel2 = texture(texmap2, DataIn[i].tex_coord);
-						accumulatedValue += (spec + intensity*mat.diffuse*texel1*texel2) * luzHolofote;
+						accumulatedValue += (spec + intensity*diff*texel1*texel2) * luzHolofote;
 					}
 					else if(texMode == 2) {
 						texel = texture(texmap, DataIn[i].tex_coord);
 						if(texel.a == 0.0) discard;
 						else {
-							accumulatedValue += (spec + intensity*mat.diffuse*texel) * luzHolofote;
+							accumulatedValue += (spec + intensity*diff*texel) * luzHolofote;
 							accumulatedValue[3] += texel.a;
 						}
 					}
 					else if(texMode == 3) {
 						texel3 = texture(texmap3, DataIn[i].tex_coord);
-						accumulatedValue += (spec + intensity*mat.diffuse*texel3) * luzHolofote;
+						accumulatedValue += (spec + intensity*diff*texel3) * luzHolofote;
 					}
 					else {
-						accumulatedValue += (spec + intensity*mat.diffuse) * luzHolofote;
+						accumulatedValue += (spec + intensity*diff) * luzHolofote;
 					}
 					
 				}
@@ -125,12 +160,12 @@ void main() {
 					vec3 eye = normalize(DataIn[i].eye);
 					vec3 h = normalize(ld + eye);
 					float intSpec = max(dot(h,n), 0.0);
-					spec = mat.specular * pow(intSpec, mat.shininess);
+					spec = auxSpec * pow(intSpec, mat.shininess);
 					if(texMode == 2) {
 						texel = texture(texmap, DataIn[i].tex_coord);
 						if(texel.a == 0.0) discard;
 						else {
-							accumulatedValue += (spec + intensity*mat.diffuse*texel) * luzHolofote;
+							accumulatedValue += (spec + intensity*diff*texel) * luzHolofote;
 							accumulatedValue[3] += texel.a;
 						}
 					}
@@ -172,6 +207,6 @@ void main() {
 	//apply fog
 	colorOut[3] = mat.diffuse.a; 
 	if(fog == 1){ 
-		colorOut = mix(vec4(fogColor,1.0), colorOut, visibility);
+		//colorOut = mix(vec4(fogColor,1.0), colorOut, visibility);
 	}
 }
