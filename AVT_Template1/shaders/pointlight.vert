@@ -3,6 +3,7 @@
 uniform mat4 m_pvm;
 uniform mat4 m_viewModel;
 uniform mat3 m_normal;
+uniform mat4 m_Model;
 
 uniform vec4 l_pos[8];
 uniform bool normalMap;
@@ -16,7 +17,8 @@ out Data {
 	vec3 eye;
 	vec3 lightDir;
 	vec2 tex_coord;
-} DataOut[8];
+	vec3 skyboxTexCoord;
+} DataOut[6];
 
 out vec4 pos;
 
@@ -27,7 +29,7 @@ void main () {
 	vec3 aux;
 
 	pos = m_viewModel * position;
-	for(int i = 0; i < 8; ++i) {
+	for(int i = 0; i < 6; ++i) {
 		n = normalize(m_normal * normal.xyz);
 		lightDir = vec3(l_pos[i] - pos);
 		eyeDir = vec3(-pos);
@@ -51,6 +53,8 @@ void main () {
 		DataOut[i].lightDir = lightDir;
 		DataOut[i].eye = eyeDir;
 		DataOut[i].tex_coord = texCoord.st;
+		DataOut[i].skyboxTexCoord = vec3(m_Model * position);	//Transformação de modelação do cubo unitário 
+		DataOut[i].skyboxTexCoord.x = - DataOut[i].skyboxTexCoord.x; //Texturas mapeadas no interior logo negar a coordenada x
 	}
 
 

@@ -1,5 +1,5 @@
 /* --------------------------------------------------
-AVT Math Lib 
+AVT Math Lib
  *
  * based on VSMathLib - Very Simple Matrix Library frm Lighthouse3D
  *
@@ -18,14 +18,14 @@ Author: João Madeiras Pereira
 #define M_PI       3.14159265358979323846f
 #endif
 
-static inline float 
-DegToRad(float degrees) 
-{ 
+static inline float
+DegToRad(float degrees)
+{
 	return (float)(degrees * (M_PI / 180.0f));
 };
 
 /// Matrix stacks for all matrix types
-std::vector<float *> mMatrixStack[COUNT_MATRICES];
+std::vector<float*> mMatrixStack[COUNT_MATRICES];
 
 /// The storage for matrices
 float mMatrix[COUNT_MATRICES][16];
@@ -37,7 +37,7 @@ float mNormal3x3[9];
 // glPushMatrix implementation
 void pushMatrix(MatrixTypes aType) {
 
-	float *aux = (float *)malloc(sizeof(float) * 16);
+	float* aux = (float*)malloc(sizeof(float) * 16);
 	memcpy(aux, mMatrix[aType], sizeof(float) * 16);
 	mMatrixStack[aType].push_back(aux);
 }
@@ -45,8 +45,8 @@ void pushMatrix(MatrixTypes aType) {
 // glPopMatrix implementation
 void popMatrix(MatrixTypes aType) {
 
-	if (mMatrixStack[aType].size()-1 >= 0) {
-		float *m = mMatrixStack[aType][mMatrixStack[aType].size()-1];
+	if (mMatrixStack[aType].size() - 1 >= 0) {
+		float* m = mMatrixStack[aType][mMatrixStack[aType].size() - 1];
 		memcpy(mMatrix[aType], m, sizeof(float) * 16);
 		mMatrixStack[aType].pop_back();
 		free(m);
@@ -60,18 +60,18 @@ void loadIdentity(MatrixTypes aType)
 }
 
 // glMultMatrix implementation
-void multMatrix(MatrixTypes aType, float *aMatrix)
+void multMatrix(MatrixTypes aType, float* aMatrix)
 {
-	
-	float *a, *b, res[16];
+
+	float* a, * b, res[16];
 	a = mMatrix[aType];
 	b = aMatrix;
 
 	for (int i = 0; i < 4; ++i) {
 		for (int j = 0; j < 4; ++j) {
-			res[j*4 + i] = 0.0f;
+			res[j * 4 + i] = 0.0f;
 			for (int k = 0; k < 4; ++k) {
-				res[j*4 + i] += a[k*4 + i] * b[j*4 + k]; 
+				res[j * 4 + i] += a[k * 4 + i] * b[j * 4 + k];
 			}
 		}
 	}
@@ -79,18 +79,18 @@ void multMatrix(MatrixTypes aType, float *aMatrix)
 }
 
 // aux function resMat = resMat * aMatrix
-void multMatrix(float *resMat, float *aMatrix)
+void multMatrix(float* resMat, float* aMatrix)
 {
-	
-	float *a, *b, res[16];
+
+	float* a, * b, res[16];
 	a = resMat;
 	b = aMatrix;
 
 	for (int i = 0; i < 4; ++i) {
 		for (int j = 0; j < 4; ++j) {
-			res[j*4 + i] = 0.0f;
+			res[j * 4 + i] = 0.0f;
 			for (int k = 0; k < 4; ++k) {
-				res[j*4 + i] += a[k*4 + i] * b[j*4 + k]; 
+				res[j * 4 + i] += a[k * 4 + i] * b[j * 4 + k];
 			}
 		}
 	}
@@ -99,14 +99,14 @@ void multMatrix(float *resMat, float *aMatrix)
 
 
 // glLoadMatrix implementation
-void loadMatrix(MatrixTypes aType, float *aMatrix)
+void loadMatrix(MatrixTypes aType, float* aMatrix)
 {
 	memcpy(mMatrix[aType], aMatrix, 16 * sizeof(float));
 }
 
 
 // glTranslate implementation with matrix selection
-void translate(MatrixTypes aType, float x, float y, float z) 
+void translate(MatrixTypes aType, float x, float y, float z)
 {
 	float mat[16];
 
@@ -115,20 +115,20 @@ void translate(MatrixTypes aType, float x, float y, float z)
 	mat[13] = y;
 	mat[14] = z;
 
-	multMatrix(aType,mat);
+	multMatrix(aType, mat);
 }
 
 // glScale implementation with matrix selection
-void scale(MatrixTypes aType, float x, float y, float z) 
+void scale(MatrixTypes aType, float x, float y, float z)
 {
 	float mat[16];
 
-	setIdentityMatrix(mat,4);
+	setIdentityMatrix(mat, 4);
 	mat[0] = x;
 	mat[5] = y;
 	mat[10] = z;
 
-	multMatrix(aType,mat);
+	multMatrix(aType, mat);
 }
 
 // glRotate implementation with matrix selection
@@ -145,79 +145,79 @@ void rotate(MatrixTypes aType, float angle, float x, float y, float z)
 	float co = cos(radAngle);
 	float si = sin(radAngle);
 	normalize(v);
-	float x2 = v[0]*v[0];
-	float y2 = v[1]*v[1];
-	float z2 = v[2]*v[2];
+	float x2 = v[0] * v[0];
+	float y2 = v[1] * v[1];
+	float z2 = v[2] * v[2];
 
-//	mat[0] = x2 + (y2 + z2) * co; 
+	//	mat[0] = x2 + (y2 + z2) * co; 
 	mat[0] = co + x2 * (1 - co);// + (y2 + z2) * co; 
 	mat[4] = v[0] * v[1] * (1 - co) - v[2] * si;
 	mat[8] = v[0] * v[2] * (1 - co) + v[1] * si;
-	mat[12]= 0.0f;
-	   
+	mat[12] = 0.0f;
+
 	mat[1] = v[0] * v[1] * (1 - co) + v[2] * si;
-//	mat[5] = y2 + (x2 + z2) * co;
+	//	mat[5] = y2 + (x2 + z2) * co;
 	mat[5] = co + y2 * (1 - co);
 	mat[9] = v[1] * v[2] * (1 - co) - v[0] * si;
-	mat[13]= 0.0f;
-	   
+	mat[13] = 0.0f;
+
 	mat[2] = v[0] * v[2] * (1 - co) - v[1] * si;
 	mat[6] = v[1] * v[2] * (1 - co) + v[0] * si;
-//	mat[10]= z2 + (x2 + y2) * co;
-	mat[10]= co + z2 * (1 - co);
-	mat[14]= 0.0f;
-	   
+	//	mat[10]= z2 + (x2 + y2) * co;
+	mat[10] = co + z2 * (1 - co);
+	mat[14] = 0.0f;
+
 	mat[3] = 0.0f;
 	mat[7] = 0.0f;
-	mat[11]= 0.0f;
-	mat[15]= 1.0f;
+	mat[11] = 0.0f;
+	mat[15] = 1.0f;
 
-	multMatrix(aType,mat);
+	multMatrix(aType, mat);
 }
 
 // gluLookAt implementation
 void lookAt(float xPos, float yPos, float zPos,
-					float xLook, float yLook, float zLook,
-					float xUp, float yUp, float zUp)
+	float xLook, float yLook, float zLook,
+	float xUp, float yUp, float zUp)
 {
 	float dir[3], right[3], up[3];
 
 	up[0] = xUp;	up[1] = yUp;	up[2] = zUp;
 
-	dir[0] =  (xLook - xPos);
-	dir[1] =  (yLook - yPos);
-	dir[2] =  (zLook - zPos);
+	dir[0] = (xLook - xPos);
+	dir[1] = (yLook - yPos);
+	dir[2] = (zLook - zPos);
 	normalize(dir);
 
-	crossProduct(dir,up,right);
+	crossProduct(dir, up, right);
 	normalize(right);
 
-	crossProduct(right,dir,up);
+	crossProduct(right, dir, up);
 	normalize(up);
 
-	float m1[16],m2[16];
+	float m1[16], m2[16];
 
-	m1[0]  = right[0];
-	m1[4]  = right[1];
-	m1[8]  = right[2];
+	m1[0] = right[0];
+	m1[4] = right[1];
+	m1[8] = right[2];
 	m1[12] = 0.0f;
 
-	m1[1]  = up[0];
-	m1[5]  = up[1];
-	m1[9]  = up[2];
+	m1[1] = up[0];
+	m1[5] = up[1];
+	m1[9] = up[2];
 	m1[13] = 0.0f;
 
-	m1[2]  = -dir[0];
-	m1[6]  = -dir[1];
+	m1[2] = -dir[0];
+	m1[6] = -dir[1];
 	m1[10] = -dir[2];
-	m1[14] =  0.0f;
+	m1[14] = 0.0f;
 
-	m1[3]  = 0.0f;
-	m1[7]  = 0.0f;
+	m1[3] = 0.0f;
+	m1[7] = 0.0f;
 	m1[11] = 0.0f;
 	m1[15] = 1.0f;
 
-	setIdentityMatrix(m2,4);
+	setIdentityMatrix(m2, 4);
 	m2[12] = -xPos;
 	m2[13] = -yPos;
 	m2[14] = -zPos;
@@ -231,9 +231,9 @@ void perspective(float fov, float ratio, float nearp, float farp)
 {
 	float projMatrix[16];
 
-	float f = 1.0f / tan (fov * (M_PI / 360.0f));
+	float f = 1.0f / tan(fov * (M_PI / 360.0f));
 
-	setIdentityMatrix(projMatrix,4);
+	setIdentityMatrix(projMatrix, 4);
 
 	projMatrix[0] = f / ratio;
 	projMatrix[1 * 4 + 1] = f;
@@ -247,16 +247,16 @@ void perspective(float fov, float ratio, float nearp, float farp)
 
 
 // glOrtho implementation
-void ortho(float left, float right, 
-			float bottom, float top, 
-			float nearp, float farp)
+void ortho(float left, float right,
+	float bottom, float top,
+	float nearp, float farp)
 {
 	float m[16];
 
-	setIdentityMatrix(m,4);
+	setIdentityMatrix(m, 4);
 
 	m[0 * 4 + 0] = 2 / (right - left);
-	m[1 * 4 + 1] = 2 / (top - bottom);	
+	m[1 * 4 + 1] = 2 / (top - bottom);
 	m[2 * 4 + 2] = -2 / (farp - nearp);
 	m[3 * 4 + 0] = -(right + left) / (right - left);
 	m[3 * 4 + 1] = -(top + bottom) / (top - bottom);
@@ -267,28 +267,28 @@ void ortho(float left, float right,
 
 
 // glFrustum implementation
-void frustum(float left, float right, 
-			float bottom, float top, 
-			float nearp, float farp)
+void frustum(float left, float right,
+	float bottom, float top,
+	float nearp, float farp)
 {
 	float m[16];
 
-	setIdentityMatrix(m,4);
+	setIdentityMatrix(m, 4);
 
-	m[0 * 4 + 0] = 2 * nearp / (right-left);
+	m[0 * 4 + 0] = 2 * nearp / (right - left);
 	m[1 * 4 + 1] = 2 * nearp / (top - bottom);
 	m[2 * 4 + 0] = (right + left) / (right - left);
 	m[2 * 4 + 1] = (top + bottom) / (top - bottom);
-	m[2 * 4 + 2] = - (farp + nearp) / (farp - nearp);
+	m[2 * 4 + 2] = -(farp + nearp) / (farp - nearp);
 	m[2 * 4 + 3] = -1.0f;
-	m[3 * 4 + 2] = - 2 * farp * nearp / (farp-nearp);
+	m[3 * 4 + 2] = -2 * farp * nearp / (farp - nearp);
 	m[3 * 4 + 3] = 0.0f;
 
 	multMatrix(PROJECTION, m);
 }
 
 // returns a pointer to the requested matrix
-float *get(MatrixTypes aType)
+float* get(MatrixTypes aType)
 {
 	return mMatrix[aType];
 }
@@ -296,21 +296,21 @@ float *get(MatrixTypes aType)
 // returns a pointer to the requested matrix
 float *get(ComputedMatrixTypes aType)
 {
-	
-			computeDerivedMatrix(aType);
-			return mCompMatrix[aType]; 
 
-	
+			computeDerivedMatrix(aType);
+			return mCompMatrix[aType];
+
+
 }
 */
 
 // sets the square matrix mat to the identity matrix,
 // size refers to the number of rows (or columns)
-void setIdentityMatrix( float *mat, int size) {
+void setIdentityMatrix(float* mat, int size) {
 
 	// fill matrix with 0s
 	for (int i = 0; i < size * size; ++i)
-			mat[i] = 0.0f;
+		mat[i] = 0.0f;
 
 	// fill diagonal with 1s
 	for (int i = 0; i < size; ++i)
@@ -318,48 +318,61 @@ void setIdentityMatrix( float *mat, int size) {
 }
 
 // Compute res = M * point
-void multMatrixPoint(MatrixTypes aType, float *point, float *res) {
+void multMatrixPoint(MatrixTypes aType, float* point, float* res) {
 
 	for (int i = 0; i < 4; ++i) {
 
 		res[i] = 0.0f;
-	
+
 		for (int j = 0; j < 4; j++) {
-		
-			res[i] += point[j] * mMatrix[aType][j*4 + i];
-		} 
+
+			res[i] += point[j] * mMatrix[aType][j * 4 + i];
+		}
+	}
+}
+
+void multMatrixPoint(ComputedMatrixTypes aType, float* point, float* res) {
+
+	for (int i = 0; i < 4; ++i) {
+
+		res[i] = 0.0f;
+
+		for (int j = 0; j < 4; j++) {
+
+			res[i] += point[j] * mCompMatrix[aType][j * 4 + i];
+		}
 	}
 }
 
 // res = a cross b;
-void  crossProduct( float *a, float *b, float *res) {
+void  crossProduct(float* a, float* b, float* res) {
 
-	res[0] = a[1] * b[2]  -  b[1] * a[2];
-	res[1] = a[2] * b[0]  -  b[2] * a[0];
-	res[2] = a[0] * b[1]  -  b[0] * a[1];
+	res[0] = a[1] * b[2] - b[1] * a[2];
+	res[1] = a[2] * b[0] - b[2] * a[0];
+	res[2] = a[0] * b[1] - b[0] * a[1];
 }
 
 // returns a . b
-float dotProduct(float *a, float *b) {
+float dotProduct(float* a, float* b) {
 
-	float res = a[0] * b[0]  +  a[1] * b[1]  +  a[2] * b[2];
+	float res = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 
 	return res;
 }
 
 // returns k * a
-void constProduct(float k, float *a, float *res) {
+void constProduct(float k, float* a, float* res) {
 
 	res[0] = k * a[0];
 	res[1] = k * a[1];;
 	res[2] = k * a[2];
-	
+
 }
 
 // Normalize a vec3
-void normalize(float *a) {
+void normalize(float* a) {
 
-	float mag = sqrt(a[0] * a[0]  +  a[1] * a[1]  +  a[2] * a[2]);
+	float mag = sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
 
 	a[0] /= mag;
 	a[1] /= mag;
@@ -367,7 +380,7 @@ void normalize(float *a) {
 }
 
 // res = b - a
-void subtract(float *a, float *b, float *res) {
+void subtract(float* a, float* b, float* res) {
 
 	res[0] = b[0] - a[0];
 	res[1] = b[1] - a[1];
@@ -375,7 +388,7 @@ void subtract(float *a, float *b, float *res) {
 }
 
 // res = a + b
-void add(float *a, float *b, float *res) {
+void add(float* a, float* b, float* res) {
 
 	res[0] = b[0] + a[0];
 	res[1] = b[1] + a[1];
@@ -384,14 +397,14 @@ void add(float *a, float *b, float *res) {
 
 
 // returns |a|
-float length(float *a) {
+float length(float* a) {
 
-	return(sqrt(a[0] * a[0]  +  a[1] * a[1]  +  a[2] * a[2]));
+	return(sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]));
 
 }
 // Computes derived matrices
 void computeDerivedMatrix(ComputedMatrixTypes aType) {
-	
+
 	memcpy(mCompMatrix[VIEW_MODEL], mMatrix[VIEW], 16 * sizeof(float));
 	multMatrix(mCompMatrix[VIEW_MODEL], mMatrix[MODEL]);
 
@@ -402,8 +415,8 @@ void computeDerivedMatrix(ComputedMatrixTypes aType) {
 }
 
 // It calculates only the PVM matrix. Just an auxiliary function to be used in billboad demo: it implies that VIEW_MODEL was already calculated
-void computeDerivedMatrix_PVM(){   
-	
+void computeDerivedMatrix_PVM() {
+
 	memcpy(mCompMatrix[PROJ_VIEW_MODEL], mMatrix[PROJECTION], 16 * sizeof(float));
 	multMatrix(mCompMatrix[PROJ_VIEW_MODEL], mCompMatrix[VIEW_MODEL]);
 }
@@ -413,8 +426,7 @@ bool project(float* objCoord, float* windowCoord, int* m_viewport) {
 	float point_tmp[4];
 
 	//gets point in clipping coordinates
-	//multMatrixPoint(PROJ_VIEW_MODEL, objCoord, point_tmp);
-	multMatrixPoint(PROJECTION, objCoord, point_tmp);
+	multMatrixPoint(PROJ_VIEW_MODEL, objCoord, point_tmp);
 	//normalize between -1 and 1 
 	if (point_tmp[3] == 0.0f)  //the w value
 		return false;
@@ -431,10 +443,9 @@ bool project(float* objCoord, float* windowCoord, int* m_viewport) {
 	windowCoord[0] = (point_tmp[0] * 0.5 + 0.5) * m_viewport[2] + m_viewport[0];
 	windowCoord[1] = (point_tmp[1] * 0.5 + 0.5) * m_viewport[3] + m_viewport[1];
 	// This is only correct when glDepthRange(0.0, 1.0)
-	windowCoord[2] = (1.0 + point_tmp[0]) * 0.5;	// Between 0 and 1
+	windowCoord[2] = (1.0 + point_tmp[2]) * 0.5;	// Between 0 and 1
 	return true;
 }
-
 
 // computes the derived normal matrix - should be used after computeDerivedMatrix
 void computeNormalMatrix3x3() {
@@ -456,10 +467,10 @@ void computeNormalMatrix3x3() {
 	float det, invDet;
 
 	det = mMat3x3[0] * (mMat3x3[4] * mMat3x3[8] - mMat3x3[5] * mMat3x3[7]) +
-		  mMat3x3[1] * (mMat3x3[5] * mMat3x3[6] - mMat3x3[8] * mMat3x3[3]) +
-		  mMat3x3[2] * (mMat3x3[3] * mMat3x3[7] - mMat3x3[4] * mMat3x3[6]);
+		mMat3x3[1] * (mMat3x3[5] * mMat3x3[6] - mMat3x3[8] * mMat3x3[3]) +
+		mMat3x3[2] * (mMat3x3[3] * mMat3x3[7] - mMat3x3[4] * mMat3x3[6]);
 
-	invDet = 1.0f/det;
+	invDet = 1.0f / det;
 
 	mNormal3x3[0] = (mMat3x3[4] * mMat3x3[8] - mMat3x3[5] * mMat3x3[7]) * invDet;
 	mNormal3x3[1] = (mMat3x3[5] * mMat3x3[6] - mMat3x3[8] * mMat3x3[3]) * invDet;
@@ -470,4 +481,29 @@ void computeNormalMatrix3x3() {
 	mNormal3x3[6] = (mMat3x3[1] * mMat3x3[5] - mMat3x3[4] * mMat3x3[2]) * invDet;
 	mNormal3x3[7] = (mMat3x3[2] * mMat3x3[3] - mMat3x3[0] * mMat3x3[5]) * invDet;
 	mNormal3x3[8] = (mMat3x3[0] * mMat3x3[4] - mMat3x3[3] * mMat3x3[1]) * invDet;
+}
+
+void shadow_matrix(float* m, float* plane, float* light)    //planar shadows
+{
+	float dot = plane[0] * light[0] + plane[1] * light[1] + plane[2] * light[2] + plane[3] * light[3];
+
+	m[0] = dot - light[0] * plane[0];
+	m[4] = -light[0] * plane[1];
+	m[8] = -light[0] * plane[2];
+	m[12] = -light[0] * plane[3];
+
+	m[1] = -light[1] * plane[0];
+	m[5] = dot - light[1] * plane[1];
+	m[9] = -light[1] * plane[2];
+	m[13] = -light[1] * plane[3];
+
+	m[2] = -light[2] * plane[0];
+	m[6] = -light[2] * plane[1];
+	m[10] = dot - light[2] * plane[2];
+	m[14] = -light[2] * plane[3];
+
+	m[3] = -light[3] * plane[0];
+	m[7] = -light[3] * plane[1];
+	m[11] = -light[3] * plane[2];
+	m[15] = dot - light[3] * plane[3];
 }

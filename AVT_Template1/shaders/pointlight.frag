@@ -31,8 +31,11 @@ uniform sampler2D texmap; //tree
 uniform sampler2D texmap1; //table-cloth
 uniform sampler2D texmap2; //cloth
 uniform sampler2D texmap3; //fireworks
+uniform sampler2D texmap4; //lens flare
+uniform samplerCube cubeMap;
 uniform int texMode;
 uniform int fog;
+uniform mat4 m_View;
 
 uniform vec4 luzDirectional;
 uniform vec4 luzDifusa;
@@ -44,7 +47,8 @@ in Data {
 	vec3 eye;
 	vec3 lightDir;
 	vec2 tex_coord;
-} DataIn[8];
+	vec3 skyboxTexCoord;
+} DataIn[6];
 
 in vec4 pos;
 
@@ -57,7 +61,7 @@ void main() {
 	vec4 texel2 = vec4(0.0);
 	vec4 texel3 = vec4(0.0);
 
-	for(int i = 0; i < 8; ++i) {
+	for(int i = 0; i < 6; ++i) {
 		if(i < 6) {
 
 			if(normalMap)
@@ -108,9 +112,18 @@ void main() {
 					}
 				}
 				else if(texMode == 3) {
-						texel3 = texture(texmap3, DataIn[i].tex_coord);
-						accumulatedValue += (spec + intensity*diff*texel3) * luzDifusa;
-					}
+					texel3 = texture(texmap3, DataIn[i].tex_coord);
+					accumulatedValue += (spec + intensity*diff*texel3) * luzDifusa;
+				}
+				else if(texMode == 6){
+					vec3 reflected1 = vec3 (transpose(m_View) * vec4 (vec3(reflect(-e, n)), 0.0));
+					reflected1.x= -reflected1.x;
+					texel = texture(cubeMap, reflected1);
+					texel1 = texture(texmap1, DataIn[i].tex_coord);  // texel from lighwood.tga
+					vec4 aux_color = mix(texel, texel, 1.0);
+					aux_color = max(intensity*aux_color + spec, 0.1*aux_color);
+					accumulatedValue += vec4(aux_color.rgb, 1.0);
+				}
 				else {
 					accumulatedValue +=(spec + intensity*diff)* luzDifusa;
 				}
@@ -198,6 +211,25 @@ void main() {
 
 	else if(texMode == 3) { //Ensure directional light applies to the fireworks
 		colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel3);
+	}
+
+	else if(texMode == 4){
+		vec4 texel3 = vec4(0.0);
+		for(int i = 0; i < 6; ++i){
+			texel3 += texture(cubeMap, DataIn[i].skyboxTexCoord);
+		}
+		colorOut = texel3;
+	}
+
+	else if(texMode == 5){
+		texel2 = texture(texmap4, DataIn[5].tex_coord);
+		if((texel2.a == 0.0)  || (mat.diffuse.a == 0.0) ) discard;
+		else
+			colorOut = texel2 * mat.diffuse;
+	}
+
+	else if(texMode == 6){
+		colorOut = accumulatedValue;
 	}
 
 	else {
