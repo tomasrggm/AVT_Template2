@@ -32,6 +32,8 @@ uniform sampler2D texmap1; //table-cloth
 uniform sampler2D texmap2; //cloth
 uniform sampler2D texmap3; //fireworks
 uniform sampler2D texmap4; //lens flare
+uniform sampler2D texmap5; //stone
+uniform sampler2D texNormalMap; //normal
 uniform samplerCube cubeMap;
 uniform int texMode;
 uniform int fog;
@@ -60,12 +62,15 @@ void main() {
 	vec4 texel1 = vec4(0.0);
 	vec4 texel2 = vec4(0.0);
 	vec4 texel3 = vec4(0.0);
+	vec4 texel4 = vec4(0.0);
 
 	for(int i = 0; i < 6; ++i) {
 		if(i < 6) {
 
 			if(normalMap)
 				n = normalize(2.0 * texture(texUnitNormalMap, DataIn[i].tex_coord).rgb - 1.0);  //normal in tangent space
+			else if(texMode == 7)
+				n = normalize(2.0 * texture(texNormalMap, DataIn[i].tex_coord).rgb - 1.0);  //normal in tangent space
 			else
 				n = normalize(DataIn[i].normal);
 
@@ -124,6 +129,10 @@ void main() {
 					aux_color = max(intensity*aux_color + spec, 0.1*aux_color);
 					accumulatedValue += vec4(aux_color.rgb, 1.0);
 				}
+				else if(texMode == 7) {
+					texel4 = texture(texmap5, DataIn[i].tex_coord);
+					accumulatedValue += (spec + intensity*diff*texel4) * luzDifusa;
+				}
 				else {
 					accumulatedValue +=(spec + intensity*diff)* luzDifusa;
 				}
@@ -159,6 +168,10 @@ void main() {
 					else if(texMode == 3) {
 						texel3 = texture(texmap3, DataIn[i].tex_coord);
 						accumulatedValue += (spec + intensity*diff*texel3) * luzHolofote;
+					}
+					else if(texMode == 7) {
+						texel4 = texture(texmap5, DataIn[i].tex_coord);
+						accumulatedValue += (spec + intensity*diff*texel4) * luzHolofote;
 					}
 					else {
 						accumulatedValue += (spec + intensity*diff) * luzHolofote;
@@ -230,6 +243,10 @@ void main() {
 
 	else if(texMode == 6){
 		colorOut = accumulatedValue;
+	}
+
+	else if(texMode == 7){
+		colorOut = max(accumulatedValue , mat.ambient * luzDirectional * texel4);
 	}
 
 	else {

@@ -81,9 +81,6 @@ int billboardType = 1; //By default, it starts on cheated cylindrical
 
 float torusX[633];
 float torusZ[633];
-float torusXBackup[633];
-float torusZBackup[633];
-
 int renderedFlag = 0;
 int pauseFlag = 0;
 int vidas = 5;
@@ -98,7 +95,7 @@ VSShaderLib shader, shaderText;
 
 bool normalMapKey = TRUE; // by default if there is a normal map then bump effect is implemented. press key "b" to enable/disable normal mapping 
 
-struct MyMesh mesh[795];
+struct MyMesh mesh[796];
 vector<struct MyMesh> myMeshes;
 int objId=0; //id of the object mesh - to be used as index of mesh: mesh[objID] means the current mesh
 
@@ -131,7 +128,7 @@ GLint lPos_uniformId8;
 GLint model_uniformId;
 GLint view_uniformId;
 
-GLint tex_loc, tex_loc1, tex_loc2, tex_loc3,tex_loc4,tex_cube_loc;
+GLint tex_loc, tex_loc1, tex_loc2, tex_loc3,tex_loc4, tex_loc5, tex_cube_loc, tex_normalMap_loc;
 GLint texMode_uniformId;
 GLint fog_uniformId;
 
@@ -139,7 +136,7 @@ GLint normalMap_loc;
 GLint specularMap_loc;
 GLint diffMapCount_loc;
 
-GLuint TextureArray[11];
+GLuint TextureArray[13];
 GLuint FlareTextureArray[5];
 
 //Flare effect
@@ -194,24 +191,6 @@ float lightDir[4] = { 0.0f,0.0f,1.0f,1.0f };
 const std::string font_name = "fonts/arial.ttf";
 
 
-void restart() {
-	for (int i = 0; i < 4; i++) {
-		orangeX[i] = 0;
-		orangeZ[i] = (rand() % 100) - 45;
-		orangeSpeed[i] = 0;
-
-	}
-	carX = 5;
-	carZ = -48;
-	accelerationIncrement = 0;
-	vidas = 5;
-	pontos = 0;
-	angulo = 0;
-	for (int i = 0; i < 633; i++) {
-		torusX[i] = torusXBackup[i];
-		torusZ[i] = torusZBackup[i];
-	}
-}
 
 void timer(int value)
 {
@@ -289,9 +268,6 @@ void colision(int value) {
 				carZ = -48;
 				accelerationIncrement = 0;
 				vidas--;
-				if (vidas == 0) {
-					restart();
-				}
 			}
 		}
 
@@ -497,13 +473,13 @@ void aiRecursive_render(const aiScene* sc, const aiNode* nd)
 					if (diffMapCount == 0) {
 						diffMapCount++;
 						loc = glGetUniformLocation(shader.getProgramIndex(), "texUnitDiff");
-						glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]+4);
+						glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]+5);
 						glUniform1ui(diffMapCount_loc, diffMapCount);
 					}
 					else if (diffMapCount == 1) {
 						diffMapCount++;
 						loc = glGetUniformLocation(shader.getProgramIndex(), "texUnitDiff1");
-						glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]+4);
+						glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]+5);
 						glUniform1ui(diffMapCount_loc, diffMapCount);
 					}
 					else printf("Only supports a Material with a maximum of 2 diffuse textures\n");
@@ -517,7 +493,7 @@ void aiRecursive_render(const aiScene* sc, const aiNode* nd)
 					loc = glGetUniformLocation(shader.getProgramIndex(), "texUnitNormalMap");
 					if (normalMapKey)
 						glUniform1i(normalMap_loc, normalMapKey);
-					glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]+4);
+					glUniform1i(loc, myMeshes[nd->mMeshes[n]].texUnits[i]+5);
 
 				}
 				else printf("Texture Map not supported\n");
@@ -767,13 +743,21 @@ void renderScene(void) {
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, TextureArray[3]);
 
-		glActiveTexture(GL_TEXTURE9);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, TextureArray[9]);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[4]);
+
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, TextureArray[5]);
+
+		glActiveTexture(GL_TEXTURE11);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, TextureArray[11]);
 
 		glUniform1i(tex_loc, 0);
 		glUniform1i(tex_loc1, 1);
 		glUniform1i(tex_loc2, 2);
 		glUniform1i(tex_loc3, 3);
+		glUniform1i(tex_normalMap_loc, 4);
+		glUniform1i(tex_loc5, 5);
 		glUniform1i(tex_cube_loc, 9);
 		glUniform1i(tex_loc4, 0);
 
@@ -1096,8 +1080,6 @@ void renderScene(void) {
 	if (renderedFlag == 0) {
 		torusX[629] = 0.5f;
 		torusZ[629] = 0;
-		torusXBackup[629] = 0.5f;
-		torusZBackup[629] = 0;
 	}
 	translate(MODEL, torusX[629], 1.0f, torusX[629]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -1134,9 +1116,6 @@ void renderScene(void) {
 	if (renderedFlag == 0) {
 		torusX[630] = 4.5f;
 		torusZ[630] = 20.0f;
-		torusXBackup[630] = 4.5f;
-		torusZBackup[630] = 20.0f;
-
 	}
 	translate(MODEL, torusX[630], 1.0f, torusZ[630]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -1173,8 +1152,6 @@ void renderScene(void) {
 	if (renderedFlag == 0) {
 		torusX[631] = 4.5f;
 		torusZ[631] = -25.0f;
-		torusXBackup[631] = 4.5f;
-		torusZBackup[631] = -25.0f;
 	}
 	translate(MODEL, torusX[631], 1.0f, torusZ[631]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -1211,8 +1188,6 @@ void renderScene(void) {
 	if (renderedFlag == 0) {
 		torusX[632] = 0.5f;
 		torusZ[632] = -40.0f;
-		torusXBackup[632] = 0.5f;
-		torusZBackup[632] = -40.0f;
 	}
 	translate(MODEL, torusX[632], 1.0f, torusZ[632]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -1254,8 +1229,6 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 50] = 1.0f;
 			torusZ[i + 50] = 1.5f + i;
-			torusXBackup[i + 50] = 1.0f;
-			torusZBackup[i + 50] = 1.5f + i;
 		}
 		translate(MODEL, torusX[i + 50], 1.15f, torusZ[i + 50]);
 		// send matrices to OGL
@@ -1295,8 +1268,6 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 58 + 98] = 9.0f;
 			torusZ[i + 58 + 98] = 1.5f + i;
-			torusXBackup[i + 58 + 98] = 9.0f;
-			torusZBackup[i + 58 + 98] = 1.5f + i;
 		}
 		
 		translate(MODEL, torusX[i + 58 + 98], 1.15f, torusZ[i + 58 + 98]);
@@ -1339,8 +1310,6 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 50 + 213] = 0.0f + i;
 			torusZ[i + 50 + 213] = 57.5f;
-			torusXBackup[i + 50 + 213] = 0.0f + i;
-			torusZBackup[i + 50 + 213] = 57.5f;
 		}
 		translate(MODEL, torusX[i + 50 + 213], 1.15f, torusZ[i + 50 + 213]);
 		// send matrices to OGL
@@ -1382,8 +1351,6 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 50 + 273] = 0.0f + i;
 			torusZ[i + 50 + 273] = -57.5f;
-			torusXBackup[i + 50 + 273] = 0.0f + i;
-			torusZBackup[i + 50 + 273] = -57.5f;
 		}
 		translate(MODEL, torusX[i + 50 + 273], 1.15f, torusZ[i + 50 + 273]);
 		// send matrices to OGL
@@ -1424,8 +1391,6 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 58 + 333] = -50.0f;
 			torusZ[i + 58 + 333] = 1.5f + i;
-			torusXBackup[i + 58 + 333] = -50.0f;
-			torusZBackup[i + 58 + 333] = 1.5f + i;
 		}
 		translate(MODEL, torusX[i + 58 + 333], 1.15f, torusZ[i + 58 + 333]);
 		// send matrices to OGL
@@ -1465,8 +1430,6 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 40 + 448] = 0 + i;
 			torusZ[i + 40 + 448] = -49.5f;
-			torusXBackup[i + 40 + 448] = 0 + i;
-			torusZBackup[i + 40 + 448] = -49.5f;
 		}
 		translate(MODEL, torusX[i + 40 + 448], 1.15f, torusZ[i + 40 + 448]);
 		// send matrices to OGL
@@ -1505,8 +1468,6 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 40 + 489] = 0 + i;
 			torusZ[i + 40 + 489] = 49.5f;
-			torusXBackup[i + 40 + 489] = 0 + i;
-			torusZBackup[i + 40 + 489] = 49.5f;
 		}
 		translate(MODEL, torusX[i + 40 + 489], 1.15f, torusZ[i + 40 + 489]);
 		// send matrices to OGL
@@ -1548,8 +1509,6 @@ void renderScene(void) {
 		if (renderedFlag == 0) {
 			torusX[i + 50 + 530] = -40;
 			torusZ[i + 50 + 530] = 1.5f + i;
-			torusXBackup[i + 50 + 530] = -40;
-			torusZBackup[i + 50 + 530] = 1.5f + i;
 		}
 		translate(MODEL, torusX[i + 50 + 530], 1.15f, torusZ[i + 50 + 530]);
 		// send matrices to OGL
@@ -1878,6 +1837,42 @@ void renderScene(void) {
 	glDisable(GL_BLEND);
 	glDepthMask(GL_TRUE);
 
+
+	//BUMP CUBE
+	objId = 795;
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	translate(MODEL, 10.0f, 2.0f, -47.0f);
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniform1i(texMode_uniformId, 7);
+	glUniformMatrix4fv(view_uniformId, 1, GL_FALSE, mMatrix[VIEW]);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
+
 	// Render Sky Box
 	objId = 792;
 	glUniform1i(texMode_uniformId, 4);
@@ -1917,8 +1912,6 @@ void renderScene(void) {
 	glDepthMask(GL_FALSE);
 	
 	//VIDRO DO CARRO
-	glEnable(GL_BLEND);
-	glDepthMask(GL_FALSE);
 	objId = 789;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
@@ -1954,7 +1947,6 @@ void renderScene(void) {
 
 	popMatrix(MODEL);
 
-
 	//VIDRO NA PISTA
 	objId = 790;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
@@ -1988,9 +1980,6 @@ void renderScene(void) {
 	glBindVertexArray(0);
 
 	popMatrix(MODEL);
-
-	glDisable(GL_BLEND);
-	glDepthMask(GL_TRUE);
 
 	if (fireworks) {
 
@@ -2169,7 +2158,6 @@ void processKeys(unsigned char key, int xx, int yy) {
 
 		case 'f': if (fogFlag == 1) { fogFlag = 0; }
 				else { fogFlag = 1; } break;
-		case 'r': restart(); break;
 		}
 	}
 	else {
@@ -2362,6 +2350,8 @@ GLuint setupShaders() {
 	tex_loc2 = glGetUniformLocation(shader.getProgramIndex(), "texmap2");
 	tex_loc3 = glGetUniformLocation(shader.getProgramIndex(), "texmap3");
 	tex_loc4 = glGetUniformLocation(shader.getProgramIndex(), "texmap4");
+	tex_loc5 = glGetUniformLocation(shader.getProgramIndex(), "texmap5");
+	tex_normalMap_loc = glGetUniformLocation(shader.getProgramIndex(), "texNormalMap");
 	normalMap_loc = glGetUniformLocation(shader.getProgramIndex(), "normalMap");
 	specularMap_loc = glGetUniformLocation(shader.getProgramIndex(), "specularMap");
 	diffMapCount_loc = glGetUniformLocation(shader.getProgramIndex(), "diffMapCount");
@@ -2396,13 +2386,15 @@ void init()
 
 	freeType_init(font_name);
 
-	glGenTextures(4, TextureArray);
+	glGenTextures(5, TextureArray);
 	Texture2D_Loader(TextureArray, "tree.tga", 0);
 	Texture2D_Loader(TextureArray, "table-cloth3.jpg", 1);
 	Texture2D_Loader(TextureArray, "cloth2.jpg", 2);
 	Texture2D_Loader(TextureArray, "particle.tga", 3);
+	Texture2D_Loader(TextureArray, "normal.tga", 4);
+	Texture2D_Loader(TextureArray, "stone.tga", 5);
 	const char* filenames[] = { "posx.jpg", "negx.jpg", "posy.jpg", "negy.jpg", "posz.jpg", "negz.jpg" };
-	TextureCubeMap_Loader(TextureArray, filenames, 9);
+	TextureCubeMap_Loader(TextureArray, filenames, 11);
 	Import3DFromFile("spider/spider.obj");
 
 
@@ -2705,6 +2697,7 @@ void init()
 	mesh[objId].mat.texCount = texcount;
 	createQuad(2, 2);
 
+	//SKY BOX
 	objId = 792;
 	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
@@ -2714,11 +2707,23 @@ void init()
 	mesh[objId].mat.texCount = texcount;
 	createCube();
 
+	//LENS FLARES
 	objId = 793;
 	createQuad(1, 1);
 	loadFlareFile(&AVTflare, "flare.txt");
 
+	//REFLECTION CUBE
 	objId = 794;
+	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
+	mesh[objId].mat.shininess = shininess;
+	mesh[objId].mat.texCount = texcount;
+	createCube();
+
+	//BUMP CUBE
+	objId = 795;
 	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.specular, spec1, 4 * sizeof(float));
