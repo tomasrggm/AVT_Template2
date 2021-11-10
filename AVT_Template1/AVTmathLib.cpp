@@ -483,7 +483,7 @@ void computeNormalMatrix3x3() {
 	mNormal3x3[8] = (mMat3x3[0] * mMat3x3[4] - mMat3x3[3] * mMat3x3[1]) * invDet;
 }
 
-void shadow_matrix(float* m, float* plane, float* light)    //planar shadows
+void computeShadowMatrix(float* m, float* plane, float* light)    //planar shadows
 {
 	float dot = plane[0] * light[0] + plane[1] * light[1] + plane[2] * light[2] + plane[3] * light[3];
 

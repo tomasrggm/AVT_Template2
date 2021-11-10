@@ -27,7 +27,7 @@ uniform	sampler2D texUnitDiff1;
 uniform	sampler2D texUnitSpec;
 uniform	sampler2D texUnitNormalMap;
 
-uniform sampler2D texmap; //tree
+uniform sampler2D texmap; //billboard
 uniform sampler2D texmap1; //table-cloth
 uniform sampler2D texmap2; //cloth
 uniform sampler2D texmap3; //fireworks
@@ -35,6 +35,7 @@ uniform sampler2D texmap4; //lens flare
 uniform sampler2D texmap5; //stone
 uniform sampler2D texNormalMap; //normal
 uniform samplerCube cubeMap;
+uniform bool shadowMode; //Shadows
 uniform int texMode;
 uniform int fog;
 uniform mat4 m_View;
@@ -256,6 +257,6 @@ void main() {
 	//apply fog
 	colorOut[3] = mat.diffuse.a; 
 	if(fog == 1){ 
-		//colorOut = mix(vec4(fogColor,1.0), colorOut, visibility);
+		colorOut = mix(vec4(fogColor,1.0), colorOut, visibility);
 	}
 }

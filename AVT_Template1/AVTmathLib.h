@@ -211,4 +211,6 @@
 		//Maps object coordinates to window coordinates: - should be used after computeDerivedMatrix
 		bool project(float* objCoord, float* windowCoord, int* m_viewport);
 
+		void computeShadowMatrix(float* mat, float* plane, float* light);   //for planar shadows
+
 #endif
