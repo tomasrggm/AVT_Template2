@@ -462,15 +462,8 @@ void restart() {
 	}
 }
 
-void refresh(int value)
-{
-	//PUT YOUR CODE HERE
-}
-
 // ------------------------------------------------------------
-//
 // Reshape Callback Function
-//
 
 void changeSize(int w, int h) {
 
@@ -502,16 +495,68 @@ void changeSize(int w, int h) {
 		perspective(70.13f, ratio, 0.1f, 1000.0f);
 	}
 
-	else if (cameraFlag == 4 || cameraFlag == 5) {
+	else if (cameraFlag == 4) {
+		if (w <= h)
+			ortho(	-2.0, 
+					2.0, 
+					-2.0 * (GLfloat)h / (GLfloat)w,
+					2.0 * (GLfloat)h / (GLfloat)w, 
+					-10, 10);
+		else
+			ortho(	-2.0 * (GLfloat)w / (GLfloat)h,
+					2.0 * (GLfloat)w / (GLfloat)h, 
+					-2.0, 
+					2.0, 
+					-10, 10);
+
+		// load identity matrices for Model-View
+		loadIdentity(VIEW);
+		loadIdentity(MODEL);
+
+		glUseProgram(shader.getProgramIndex());
+
+		//translate(MODEL, carX, carY, carZ);
+		//rotate(MODEL, angulo, 0, 1.0f, 0);
+		//translate(MODEL, -0.235f, 1.015f, 0.39f);
+		//translate(MODEL, -0.5f, -0.5f, -0.5f);
+		//scale(MODEL, 0.47f, 0.12f, 0.1f);
+
+		// send matrices to OGL
+		computeDerivedMatrix(PROJ_VIEW_MODEL);
+		//glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+		glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+		computeNormalMatrix3x3();
+		glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+		glClearStencil(0);
+		glClear(GL_STENCIL_BUFFER_BIT);
+		glEnable(GL_STENCIL_TEST);
+
+		glStencilFunc(GL_NEVER, 0x1, 0x1);
+		glStencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
+
+		// Render mesh
+		glBindVertexArray(mesh[796].vao);
+
+		if (!shader.isProgramValid()) {
+			printf("Program Not Valid!\n");
+			exit(1);
+		}
+		glDrawElements(mesh[796].type, mesh[796].numIndexes, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
+		loadIdentity(PROJECTION);
+		perspective(60.0f, ratio, 0.1f, 1000.0f);
+	}
+
+	else if (cameraFlag == 5) {
 		perspective(60.0f, ratio, 0.1f, 1000.0f);
 	}
 }
 
 
 // ------------------------------------------------------------
-//
 // Render stufff
-//
 
 void aiRecursive_render(const aiScene* sc, const aiNode* nd)
 {
@@ -1812,6 +1857,8 @@ void drawEnvironmentalReflectionCube()
 	GLint loc;
 	//Enable blending
 	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glUniform1i(texMode_uniformId, 6);
 
 	objId = 794;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
@@ -1824,11 +1871,10 @@ void drawEnvironmentalReflectionCube()
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, 10.0f, 2.0f, -45.0f);
+	translate(MODEL, -4.0f, 2.0f, -48.0f);
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniform1i(texMode_uniformId, 6);
 	glUniformMatrix4fv(view_uniformId, 1, GL_FALSE, mMatrix[VIEW]);
 	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
 	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
@@ -1847,6 +1893,7 @@ void drawEnvironmentalReflectionCube()
 
 	popMatrix(MODEL);
 	glDisable(GL_BLEND);
+	glUniform1i(texMode_uniformId, 0);
 }
 
 void drawBumpMapCube()
@@ -1855,6 +1902,8 @@ void drawBumpMapCube()
 	GLint loc;
 
 	objId = 795;
+	glUniform1i(texMode_uniformId, 7);
+
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
@@ -1865,11 +1914,10 @@ void drawBumpMapCube()
 	glUniform1f(loc, mesh[objId].mat.shininess);
 	pushMatrix(MODEL);
 
-	translate(MODEL, 10.0f, 2.0f, -47.0f);
+	translate(MODEL, -6.0f, 2.0f, -48.0f);
 
 	// send matrices to OGL
 	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniform1i(texMode_uniformId, 7);
 	glUniformMatrix4fv(view_uniformId, 1, GL_FALSE, mMatrix[VIEW]);
 	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
 	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
@@ -2479,7 +2527,6 @@ void renderScene(void) {
 
 
 	//Draw sky box before any objects
-	//SKY BOX
 	drawSkyBox();
 
 	//Drawing objects
@@ -2545,15 +2592,21 @@ void renderScene(void) {
 			drawCar();
 			drawOranges();
 			drawButters();
+			drawCandles();
 			drawRaceTrackCheerios();
 			drawSpectatorBillboards();
+			drawEnvironmentalReflectionCube();
+			drawBumpMapCube();
 			drawCarRearView();
 		}
 		else {
 			drawCar();
 			drawOranges();
 			drawButters();
+			drawCandles();
 			drawSpectatorBillboards();
+			drawEnvironmentalReflectionCube();
+			drawBumpMapCube();
 			drawCarRearView();
 		}
 		popMatrix(MODEL);
@@ -2561,28 +2614,24 @@ void renderScene(void) {
 		glDisable(GL_STENCIL_TEST);
 		glDisable(GL_BLEND);
 		glEnable(GL_DEPTH_TEST);
-
-		//render the geometry
 		glUniform1i(shadowMode_uniformId, 0);
-		drawObjects();
-		drawCarRearView();
-		//drawCarRearViewMirror();
-		drawFireworks();
 
 		//Rear-View
-		if (cameraFlag == 4) {
-			glClearStencil(0);
+		if (cameraFlag == 4) { //When we are in the driver's camera
+			/*glClearStencil(0);
 			glClear(GL_STENCIL_BUFFER_BIT);
 
 			//Limit stencil to rear-view mirror
 			glEnable(GL_STENCIL_TEST);
+			//We fill the stencil with 1 where we will draw the objects we see in rear-view
+			//We make it so we always fail the tests
+			//We make it so, whenever we fail, we replace what was previously in the stencil
 			glStencilFunc(GL_NEVER, 0x1, 0x1);
-			glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-			//drawCarGlass();
+			glStencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
 
-			//glDisable(GL_DEPTH_TEST);
+			//We limit the stencil to the rear-view mirror
 			drawCarRearViewMirror();
-			//glEnable(GL_DEPTH_TEST);
+			*/
 
 			//Change to rear-view camera
 			loadIdentity(VIEW);
@@ -2591,23 +2640,30 @@ void renderScene(void) {
 			setupCameraLookAts();
 
 			//Draw objects behind car in stencil
+			//Where there is 1, we want to keep what we will draw next
 			glStencilFunc(GL_EQUAL, 0x1, 0x1);
 			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
-			drawCar();
-			drawOranges();
-			drawButters();
-			//drawRaceTrackCheerios(); //We can never really see them so why bother to render them?
-			drawSpectatorBillboards();
+			drawObjectsButRaceTrack();
 			//drawCarGlass(); //Same idea
 			drawFireworks();
 
 			//Reset camera back to original position
 			cameraFlag = 4;
 			setupCameraLookAts();
-
+			
+			glStencilFunc(GL_NOTEQUAL, 0x1, 0x1);
+			//Draw the objects above the table
+			drawObjects();
+			drawCarRearView();
+			drawFireworks();
 			glDisable(GL_STENCIL_TEST);
-			//glEnable(GL_DEPTH_TEST);
+		}
+		else {
+			//Draw the objects above the table
+			drawObjects();
+			drawCarRearView();
+			drawFireworks();
 		}
 	}
 
@@ -2634,9 +2690,7 @@ void renderScene(void) {
 
 
 // ------------------------------------------------------------
-//
 // Events from the Keyboard
-//
 
 void processKeys(unsigned char key, int xx, int yy) {
 
@@ -2675,6 +2729,7 @@ void processKeys(unsigned char key, int xx, int yy) {
 		case 'h': if (lightFlag3 == 1) { lightFlag3 = 0; }
 				else { lightFlag3 = 1; } break; //Disable Spotlight lights
 
+		/*
 		case 'b': billboardType++; if (billboardType == 5) billboardType = 0;
 			switch (billboardType) {
 			case 0: printf("Cheating Spherical (matrix reset)\n"); break;
@@ -2683,6 +2738,7 @@ void processKeys(unsigned char key, int xx, int yy) {
 			case 3: printf("True Cylindrical\n"); break;
 			case 4: printf("No billboarding\n"); break;
 			}
+		*/
 
 		case 'e': fireworks = 1; iniParticles(); break;
 
@@ -2730,6 +2786,7 @@ void processKeys(unsigned char key, int xx, int yy) {
 		case 'h': if (lightFlag3 == 1) { lightFlag3 = 0; }
 				else { lightFlag3 = 1; } break; //Disable Spotlight lights
 
+		/*
 		case 'b': billboardType++; if (billboardType == 5) billboardType = 0;
 			switch (billboardType) {
 			case 0: printf("Cheating Spherical (matrix reset)\n"); break;
@@ -2738,6 +2795,7 @@ void processKeys(unsigned char key, int xx, int yy) {
 			case 3: printf("True Cylindrical\n"); break;
 			case 4: printf("No billboarding\n"); break;
 			}
+		*/
 
 		case 'e': fireworks = 1; iniParticles(); break;
 
@@ -2754,9 +2812,7 @@ void processKeys(unsigned char key, int xx, int yy) {
 
 
 // ------------------------------------------------------------
-//
 // Mouse Events
-//
 
 void processMouseButtons(int button, int state, int xx, int yy)
 {
@@ -2844,10 +2900,7 @@ void mouseWheel(int wheel, int direction, int x, int y) {
 }
 
 // --------------------------------------------------------
-//
 // Shader Stuff
-//
-
 
 GLuint setupShaders() {
 
@@ -2909,9 +2962,7 @@ GLuint setupShaders() {
 }
 
 // ------------------------------------------------------------
-//
 // Model loading and OpenGL setup
-//
 
 void init()
 {
@@ -3296,10 +3347,7 @@ void init()
 
 
 // ------------------------------------------------------------
-//
 // Main function
-//
-
 
 int main(int argc, char** argv) {
 
