@@ -18,8 +18,22 @@ void drawHUDText();
 
 void setupCameraLookAts();
 
+void drawLensFlare();
+
+void drawSkyBox();
+
+void drawBumpMapCube();
+
+void drawEnvironmentalReflectionCube();
+
+void drawCandles();
+
+void drawAssimpModel();
+
 void drawCarRearView();
 
 void drawObjects();
 
 void drawFireworks();
+
+void restart();

@@ -83,6 +83,8 @@ int billboardType = 1; //By default, it starts on cheated cylindrical
 
 float torusX[633];
 float torusZ[633];
+float torusXBackup[633];
+float torusZBackup[633];
 int renderedFlag = 0;
 int pauseFlag = 0;
 int vidas = 5;
@@ -147,6 +149,7 @@ float lightScreenPos[3];  //Position of the light in Window Coordinates
 
 // Camera Position
 float camX, camY, camZ;
+float camYGlobal;
 
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
@@ -164,6 +167,61 @@ inline double clamp(const double x, const double min, const double max) {
 
 inline int clampi(const int x, const int min, const int max) {
 	return (x < min ? min : (x > max ? max : x));
+}
+
+unsigned int getTextureId(char* name) {
+	int i;
+
+	for (i = 0; i < NTEXTURES; ++i)
+	{
+		if (strncmp(name, flareTextureNames[i], strlen(name)) == 0)
+			return i;
+	}
+	return -1;
+}
+
+void    loadFlareFile(FLARE_DEF* flare, char* filename)
+{
+	int     n = 0;
+	FILE* f;
+	char    buf[256];
+	int fields;
+
+	memset(flare, 0, sizeof(FLARE_DEF));
+
+	f = fopen(filename, "r");
+	if (f)
+	{
+		fgets(buf, sizeof(buf), f);
+		sscanf(buf, "%f %f", &flare->fScale, &flare->fMaxSize);
+
+		while (!feof(f))
+		{
+			char            name[8] = { '\0', };
+			double          dDist = 0.0, dSize = 0.0;
+			float			color[4];
+			int				id;
+
+			fgets(buf, sizeof(buf), f);
+			fields = sscanf(buf, "%4s %lf %lf ( %f %f %f %f )", name, &dDist, &dSize, &color[3], &color[0], &color[1], &color[2]);
+			if (fields == 7)
+			{
+				for (int i = 0; i < 4; ++i) color[i] = clamp(color[i] / 255.0f, 0.0f, 1.0f);
+				id = getTextureId(name);
+				if (id < 0) printf("Texture name not recognized\n");
+				else
+					flare->element[n].textureId = id;
+				flare->element[n].fDistance = (float)dDist;
+				flare->element[n].fSize = (float)dSize;
+				memcpy(flare->element[n].matDiffuse, color, 4 * sizeof(float));
+				++n;
+			}
+		}
+
+		flare->nPieces = n;
+		fclose(f);
+	}
+	else printf("Flare file opening error\n");
 }
 
 typedef struct {
@@ -202,6 +260,9 @@ void timer(int value)
 	glutSetWindow(WindowHandle);
 	glutSetWindowTitle(s.c_str());
 	FrameCount = 0;
+	if (pauseFlag == 0) {
+		pontos++;
+	}
 	glutTimerFunc(1000, timer, 0);
 
 }
@@ -236,29 +297,31 @@ void iniParticles(void)
 	GLfloat v, theta, phi;
 	int i;
 
-	for (i = 0; i < MAX_PARTICULAS; i++)
-	{
-		v = 0.8 * frand() + 0.2;
-		phi = frand() * M_PI;
-		theta = 2.0 * frand() * M_PI;
+	if (pauseFlag == 0) {
+		for (i = 0; i < MAX_PARTICULAS; i++)
+		{
+			v = 0.8 * frand() + 0.2;
+			phi = frand() * M_PI;
+			theta = 2.0 * frand() * M_PI;
 
-		particula[i].x = 0.0f;
-		particula[i].y = 10.0f;
-		particula[i].z = 0.0f;
-		particula[i].vx = v * cos(theta) * sin(phi);
-		particula[i].vy = v * cos(phi);
-		particula[i].vz = v * sin(theta) * sin(phi);
-		particula[i].ax = 0.1f; /* simular um pouco de vento */
-		particula[i].ay = -0.15f; /* simular a aceleração da gravidade */
-		particula[i].az = 0.0f;
+			particula[i].x = 0.0f;
+			particula[i].y = 10.0f;
+			particula[i].z = 0.0f;
+			particula[i].vx = v * cos(theta) * sin(phi);
+			particula[i].vy = v * cos(phi);
+			particula[i].vz = v * sin(theta) * sin(phi);
+			particula[i].ax = 0.1f; /* simular um pouco de vento */
+			particula[i].ay = -0.15f; /* simular a aceleração da gravidade */
+			particula[i].az = 0.0f;
 
-		/* tom amarelado que vai ser multiplicado pela textura que varia entre branco e preto */
-		particula[i].r = 0.882f;
-		particula[i].g = 0.552f;
-		particula[i].b = 0.211f;
+			/* tom amarelado que vai ser multiplicado pela textura que varia entre branco e preto */
+			particula[i].r = 0.882f;
+			particula[i].g = 0.552f;
+			particula[i].b = 0.211f;
 
-		particula[i].life = 1.0f;		/* vida inicial */
-		particula[i].fade = 0.0025f;	    /* step de decréscimo da vida para cada iteração */
+			particula[i].life = 1.0f;		/* vida inicial */
+			particula[i].fade = 0.0025f;	    /* step de decréscimo da vida para cada iteração */
+		}
 	}
 }
 
@@ -270,7 +333,11 @@ void colision(int value) {
 				carZ = -48;
 				accelerationIncrement = 0;
 				vidas--;
+				if (vidas == 0) {
+					pauseFlag = 2;
+				}
 			}
+
 		}
 
 		for (int i = 0; i < 633; i++) {
@@ -332,7 +399,6 @@ void colision(int value) {
 	glutTimerFunc(1, colision, 0);
 }
 
-
 void move(int value) {
 	if (pauseFlag == 0) {
 		if (angulo > 360 || angulo < -360) {
@@ -366,8 +432,8 @@ void movementOrange(int value) {
 			orangeSpeed[i] += 0.005f * (i + 1) * deltaTime;
 
 			orangeX[i] += orangeSpeed[i];
-			if (orangeX[i] > 50) {
-				orangeX[i] = -50;
+			if (orangeX[i] > 20) {
+				orangeX[i] = -60;
 				orangeZ[i] = (rand() % 100) - 48;
 			}
 		}
@@ -376,7 +442,25 @@ void movementOrange(int value) {
 	glutTimerFunc(1, movementOrange, 0);
 }
 
+void restart() {
+	for (int i = 0; i < 4; i++) {
+		orangeX[i] = 0;
+		orangeZ[i] = (rand() % 100) - 45;
+		orangeSpeed[i] = 0;
 
+	}
+	carX = 5;
+	carZ = -48;
+	accelerationIncrement = 0;
+	vidas = 5;
+	pontos = 0;
+	angulo = 0;
+	pauseFlag = 0;
+	for (int i = 0; i < 633; i++) {
+		torusX[i] = torusXBackup[i];
+		torusZ[i] = torusZBackup[i];
+	}
+}
 
 void refresh(int value)
 {
@@ -656,6 +740,20 @@ void drawTable()
 
 	popMatrix(MODEL);
 	glUniform1i(texMode_uniformId, 0);
+}
+
+void drawAssimpModel()
+{
+	//SPIDER
+	pushMatrix(MODEL);
+
+	translate(MODEL, -2.0f, 0.80f, -45.0f);
+	scale(MODEL, 0.02f, 0.02f, 0.02f);
+	rotate(MODEL, 180, 0, 1.0f, 0);
+
+	aiRecursive_render(scene, scene->mRootNode);
+
+	popMatrix(MODEL);
 }
 
 void drawCar()
@@ -947,6 +1045,8 @@ void drawButters()
 	if (renderedFlag == 0) {
 		torusX[629] = 0.5f;
 		torusZ[629] = 0;
+		torusXBackup[629] = 0.5f;
+		torusZBackup[629] = 0;
 	}
 	translate(MODEL, torusX[629], 0.1f, torusZ[629]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -983,6 +1083,8 @@ void drawButters()
 	if (renderedFlag == 0) {
 		torusX[630] = 4.5f;
 		torusZ[630] = 20.0f;
+		torusXBackup[630] = 4.5f;
+		torusZBackup[630] = 20.0f;
 	}
 	translate(MODEL, torusX[630], 0.1f, torusZ[630]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -1019,6 +1121,8 @@ void drawButters()
 	if (renderedFlag == 0) {
 		torusX[631] = 4.5f;
 		torusZ[631] = -25.0f;
+		torusXBackup[631] = 4.5f;
+		torusZBackup[631] = -25.0f;
 	}
 	translate(MODEL, torusX[631], 0.1f, torusZ[631]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -1055,6 +1159,8 @@ void drawButters()
 	if (renderedFlag == 0) {
 		torusX[632] = 0.5f;
 		torusZ[632] = -40.0f;
+		torusXBackup[632] = 0.5f;
+		torusZBackup[632] = -40.0f;
 	}
 	translate(MODEL, torusX[632], 0.1f, torusZ[632]);
 	scale(MODEL, 4.0f, 2.0f, 2.0f);
@@ -1099,6 +1205,8 @@ void drawRaceTrackCheerios()
 		if (renderedFlag == 0) {
 			torusX[i + 50] = 1.0f;
 			torusZ[i + 50] = 1.5f + i;
+			torusXBackup[i + 50] = 1.0f;
+			torusZBackup[i + 50] = 1.5f + i;
 		}
 		translate(MODEL, torusX[i + 50], 0.15f, torusZ[i + 50]);
 		// send matrices to OGL
@@ -1138,6 +1246,8 @@ void drawRaceTrackCheerios()
 		if (renderedFlag == 0) {
 			torusX[i + 58 + 98] = 9.0f;
 			torusZ[i + 58 + 98] = 1.5f + i;
+			torusXBackup[i + 58 + 98] = 9.0f;
+			torusZBackup[i + 58 + 98] = 1.5f + i;
 		}
 
 		translate(MODEL, torusX[i + 58 + 98], 0.15f, torusZ[i + 58 + 98]);
@@ -1180,6 +1290,8 @@ void drawRaceTrackCheerios()
 		if (renderedFlag == 0) {
 			torusX[i + 50 + 213] = 0.0f + i;
 			torusZ[i + 50 + 213] = 57.5f;
+			torusXBackup[i + 50 + 213] = 0.0f + i;
+			torusZBackup[i + 50 + 213] = 57.5f;
 		}
 		translate(MODEL, torusX[i + 50 + 213], 0.15f, torusZ[i + 50 + 213]);
 		// send matrices to OGL
@@ -1221,6 +1333,8 @@ void drawRaceTrackCheerios()
 		if (renderedFlag == 0) {
 			torusX[i + 50 + 273] = 0.0f + i;
 			torusZ[i + 50 + 273] = -57.5f;
+			torusXBackup[i + 50 + 273] = 0.0f + i;
+			torusZBackup[i + 50 + 273] = -57.5f;
 		}
 		translate(MODEL, torusX[i + 50 + 273], 0.15f, torusZ[i + 50 + 273]);
 		// send matrices to OGL
@@ -1261,6 +1375,8 @@ void drawRaceTrackCheerios()
 		if (renderedFlag == 0) {
 			torusX[i + 58 + 333] = -50.0f;
 			torusZ[i + 58 + 333] = 1.5f + i;
+			torusXBackup[i + 58 + 333] = -50.0f;
+			torusZBackup[i + 58 + 333] = 1.5f + i;
 		}
 		translate(MODEL, torusX[i + 58 + 333], 0.15f, torusZ[i + 58 + 333]);
 		// send matrices to OGL
@@ -1300,6 +1416,8 @@ void drawRaceTrackCheerios()
 		if (renderedFlag == 0) {
 			torusX[i + 40 + 448] = 0 + i;
 			torusZ[i + 40 + 448] = -49.5f;
+			torusXBackup[i + 40 + 448] = 0 + i;
+			torusZBackup[i + 40 + 448] = -49.5f;
 		}
 		translate(MODEL, torusX[i + 40 + 448], 0.15f, torusZ[i + 40 + 448]);
 		// send matrices to OGL
@@ -1338,6 +1456,8 @@ void drawRaceTrackCheerios()
 		if (renderedFlag == 0) {
 			torusX[i + 40 + 489] = 0 + i;
 			torusZ[i + 40 + 489] = 49.5f;
+			torusXBackup[i + 40 + 489] = 0 + i;
+			torusZBackup[i + 40 + 489] = 49.5f;
 		}
 		translate(MODEL, torusX[i + 40 + 489], 0.15f, torusZ[i + 40 + 489]);
 		// send matrices to OGL
@@ -1379,6 +1499,8 @@ void drawRaceTrackCheerios()
 		if (renderedFlag == 0) {
 			torusX[i + 50 + 530] = -40;
 			torusZ[i + 50 + 530] = 1.5f + i;
+			torusXBackup[i + 50 + 530] = -40;
+			torusZBackup[i + 50 + 530] = 1.5f + i;
 		}
 		translate(MODEL, torusX[i + 50 + 530], 0.15f, torusZ[i + 50 + 530]);
 		// send matrices to OGL
@@ -1400,6 +1522,215 @@ void drawRaceTrackCheerios()
 		popMatrix(MODEL);
 		objId++;
 	}
+}
+
+void drawCandles()
+{
+	GLint loc;
+
+	//Velas
+	objId = 782;
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	translate(MODEL, -0.5f, 0.65f, -48.0f);
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
+
+
+	//CANDLES
+	objId = 783;
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	translate(MODEL, 10.5f, 0.65f, -48.0f);
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
+
+
+	//CANDLES
+	objId = 784;
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	translate(MODEL, -0.5f, 0.65f, 48.0f);
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
+
+
+	//CANDLES
+	objId = 785;
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	translate(MODEL, -38.0f, 0.65f, 48.0f);
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
+
+
+	//CANDLES
+	objId = 786;
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	translate(MODEL, -38.0f, 0.65f, -48.0f);
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
+
+
+	//CANDLES
+	objId = 787;
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	translate(MODEL, -19.0f, 0.65f, 0.0f);
+	scale(MODEL, 2.0f, 1.0f, 2.0f);
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
 }
 
 void drawSpectatorBillboards()
@@ -1472,6 +1803,132 @@ void drawSpectatorBillboards()
 		}
 	}
 	glDisable(GL_BLEND);
+}
+
+void drawEnvironmentalReflectionCube()
+{
+	//Environmental reflection cube
+
+	GLint loc;
+	//Enable blending
+	glEnable(GL_BLEND);
+
+	objId = 794;
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	translate(MODEL, 10.0f, 2.0f, -45.0f);
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniform1i(texMode_uniformId, 6);
+	glUniformMatrix4fv(view_uniformId, 1, GL_FALSE, mMatrix[VIEW]);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
+	glDisable(GL_BLEND);
+}
+
+void drawBumpMapCube()
+{
+	//BUMP MAP CUBE
+	GLint loc;
+
+	objId = 795;
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
+	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
+	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
+	glUniform4fv(loc, 1, mesh[objId].mat.specular);
+	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
+	glUniform1f(loc, mesh[objId].mat.shininess);
+	pushMatrix(MODEL);
+
+	translate(MODEL, 10.0f, 2.0f, -47.0f);
+
+	// send matrices to OGL
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniform1i(texMode_uniformId, 7);
+	glUniformMatrix4fv(view_uniformId, 1, GL_FALSE, mMatrix[VIEW]);
+	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+	computeNormalMatrix3x3();
+	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
+
+	// Render mesh
+	glBindVertexArray(mesh[objId].vao);
+
+	if (!shader.isProgramValid()) {
+		printf("Program Not Valid!\n");
+		exit(1);
+	}
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+
+	popMatrix(MODEL);
+
+	glUniform1i(texMode_uniformId, 0);
+}
+
+void drawSkyBox()
+{
+	//SKY BOX
+	GLint loc;
+
+	objId = 792;
+	glUniform1i(texMode_uniformId, 4);
+
+	//it won't write anything to the zbuffer; all subsequently drawn scenery to be in front of the sky box.
+	glDepthMask(GL_FALSE);
+	glFrontFace(GL_CW); // set clockwise vertex order to mean the front
+
+	pushMatrix(MODEL);
+	pushMatrix(VIEW);  //se quiser anular a translação
+
+					   //  Fica mais realista se não anular a translação da câmara
+					   // Cancel the translation movement of the camera - de acordo com o tutorial do Antons
+	mMatrix[VIEW][12] = 0.0f;
+	mMatrix[VIEW][13] = 0.0f;
+	mMatrix[VIEW][14] = 0.0f;
+
+	scale(MODEL, 100.0f, 100.0f, 100.0f);
+	translate(MODEL, -0.5f, -0.5f, -0.5f);
+
+	// send matrices to OGL
+	glUniformMatrix4fv(model_uniformId, 1, GL_FALSE, mMatrix[MODEL]); //Transformação de modelação do cubo unitário para o "Big Cube"
+	computeDerivedMatrix(PROJ_VIEW_MODEL);
+	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
+
+	glBindVertexArray(mesh[objId].vao);
+	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
+	popMatrix(MODEL);
+	popMatrix(VIEW);
+
+	glFrontFace(GL_CCW); // restore counter clockwise vertex order to mean the front
+	glDepthMask(GL_TRUE);
+	glUniform1i(texMode_uniformId, 0);
 }
 
 void drawCarGlass()
@@ -1566,7 +2023,7 @@ void drawCarRearViewMirror()
 {
 	GLint loc;
 
-	objId = 786;
+	objId = 796;
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
 	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
 	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
@@ -1621,17 +2078,12 @@ void drawFireworks()
 	//Enable blending and make Z-buffer read-only
 	glEnable(GL_BLEND);
 	glDepthMask(GL_FALSE);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	objId = 791;  //quad for particle
-	if (fireworks) {
+	if (fireworks && pauseFlag == 0) {
 
 		updateParticles();
-
-		// draw fireworks particles
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-		glDepthMask(GL_FALSE);  //Depth Buffer Read Only
 
 		glUniform1i(texMode_uniformId, 3); // draw modulated textured particles 
 
@@ -1704,6 +2156,9 @@ void drawFireworks()
 
 void drawObjects()
 {
+	//SPIDER
+	drawAssimpModel();
+
 	//CAR
 	drawCar();
 
@@ -1716,9 +2171,18 @@ void drawObjects()
 	//RACE-TRACK-CHEERIOS
 	drawRaceTrackCheerios();
 
+	//CANDLES
+	drawCandles();
+
 	//Blended objects
 	//BILLBOARDS
 	drawSpectatorBillboards();
+
+	//ENVIRONMENTAL REFLECTION CUBE
+	drawEnvironmentalReflectionCube();
+
+	//BUMP MAP CUBE
+	drawBumpMapCube();
 
 	//CAR-GLASS
 	drawCarGlass();
@@ -1726,6 +2190,9 @@ void drawObjects()
 
 void drawObjectsButRaceTrack()
 {
+	//SPIDER
+	drawAssimpModel();
+
 	//CAR
 	drawCar();
 
@@ -1735,12 +2202,50 @@ void drawObjectsButRaceTrack()
 	//BUTTERS
 	drawButters();
 
+	//CANDLES
+	drawCandles();
+
 	//Blended objects
 	//BILLBOARDS
 	drawSpectatorBillboards();
 
+	//ENVIRONMENTAL REFLECTION CUBE
+	drawEnvironmentalReflectionCube();
+
+	//BUMP MAP CUBE
+	drawBumpMapCube();
+
 	//CAR-GLASS
 	drawCarGlass();
+}
+
+void drawLensFlare()
+{
+	//LENS FLARE
+	objId = 793;
+	int flarePos[2];
+	int m_viewport[4];
+	glGetIntegerv(GL_VIEWPORT, m_viewport);
+
+	pushMatrix(MODEL);
+	loadIdentity(MODEL);
+	computeDerivedMatrix(PROJ_VIEW_MODEL);  //pvm to be applied to lightPost. pvm is used in project function
+
+	if (!project(lightPos6, lightScreenPos, m_viewport))
+		printf("Error in getting projected light in screen\n");  //Calculate the window Coordinates of the light position: the projected position of light on viewport
+	flarePos[0] = clampi((int)lightScreenPos[0], m_viewport[0], m_viewport[0] + m_viewport[2] - 1);
+	flarePos[1] = clampi((int)lightScreenPos[1], m_viewport[1], m_viewport[1] + m_viewport[3] - 1);
+	popMatrix(MODEL);
+
+	//viewer looking down at  negative z direction
+	pushMatrix(PROJECTION);
+	loadIdentity(PROJECTION);
+	pushMatrix(VIEW);
+	loadIdentity(VIEW);
+	ortho(m_viewport[0], m_viewport[0] + m_viewport[2] - 1, m_viewport[1], m_viewport[1] + m_viewport[3] - 1, -1, 1);
+	render_flare(&AVTflare, flarePos[0], flarePos[1], m_viewport);
+	popMatrix(PROJECTION);
+	popMatrix(VIEW);
 }
 
 void drawHUDText()
@@ -1758,12 +2263,19 @@ void drawHUDText()
 	pushMatrix(VIEW);
 	loadIdentity(VIEW);
 	ortho(m_viewport[0], m_viewport[0] + m_viewport[2] - 1, m_viewport[1], m_viewport[1] + m_viewport[3] - 1, -1, 1);
+
+	float h = glutGet(GLUT_WINDOW_HEIGHT);
+	float w = glutGet(GLUT_WINDOW_WIDTH);
 	if (pauseFlag == 1) {
-		RenderText(shaderText, "Pausa", 2.0f * WinX / 5.0f, WinY / 2.0f, 1.0f, 0.5f, 0.8f, 0.2f);
+		RenderText(shaderText, "Pause", w / 4.0f, h / 2.0f, 1.0f, 0.5f, 0.8f, 0.2f);
+	}
+	if (pauseFlag == 2) {
+		RenderText(shaderText, "Game Over", w / 4.0f, 2.0f * h / 3.0f, 1.0f, 0.5f, 0.8f, 0.2f);
+		RenderText(shaderText, "Press R to restart", w / 4.0f, h / 2.0f, 0.6f, 0.5f, 0.8f, 0.2f);
 	}
 	std::string v = std::to_string(vidas);
 	std::string p = std::to_string(pontos);
-	RenderText(shaderText, "vidas: " + v + " pontos: " + p, 25.0f, 25.0f, 0.4f, 0.5f, 0.8f, 0.2f);
+	RenderText(shaderText, "Lifes: " + v + " Points: " + p, 25.0f, 25.0f, 0.4f, 0.5f, 0.8f, 0.2f);
 	popMatrix(PROJECTION);
 	popMatrix(VIEW);
 	popMatrix(MODEL);
@@ -1776,16 +2288,19 @@ void setupCameraLookAts()
 {
 	if (cameraFlag == 1) { //Fixed ortho camera
 		lookAt(-19.5f, 10.0f, 0, -19.5f, 0, 0 + 0.00005f, 0, 1, 0);
+		camYGlobal = 10.0f;
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 	}
 	else if (cameraFlag == 2) { //Fixed perspective camera
 		//lookAt(carX, 15.0f, carZ, carX, carY, carZ + 0.01, 0, 1, 0);
 		//lookAt(-19.5, 0.0f, -70.0f, -19.5f, 0, 0 + 0.01, 0, 1, 0);
 		lookAt(20.0f, 40.0, 0, -19.5f, 0, 0 + 0.01, 0, 1, 0);
+		camYGlobal = 40.0f;
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 	}
 	else if (cameraFlag == 3) { //Movement camera
 		lookAt(camX + carX, camY + carY, camZ + carZ, carX, carY, carZ, 0, 1, 0);
+		camYGlobal = camY + carY;
 
 		//Translate camera to car's coordinates, rotate, and return back to original position
 		translate(VIEW, carX, carY, carZ);
@@ -1799,6 +2314,7 @@ void setupCameraLookAts()
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 
 		lookAt(carX, carY + 1.0, carZ - 1.0, carX, carY + 1.0, carZ, 0, 1, 0);
+		camYGlobal = carY + 1.0;
 
 		//Translate camera to car's coordinates, rotate, and return back to original position
 		translate(VIEW, carX, carY, carZ);
@@ -1811,6 +2327,7 @@ void setupCameraLookAts()
 
 		//lookAt(carX, carY + 1.0, carZ - 1.0, carX, carY + 1.0, carZ, 0, 1, 0);
 		lookAt(carX, carY + 1.0, carZ + 0.5, carX, carY + 1.0, carZ, 0, 1, 0);
+		camYGlobal = carY + 1.0;
 
 		//Translate camera to car's coordinates, rotate, and return back to original position
 		translate(VIEW, carX, carY, carZ);
@@ -1881,7 +2398,7 @@ void renderScene(void) {
 	glUniform1i(tex_loc3, 3);
 	glUniform1i(tex_normalMap_loc, 4);
 	glUniform1i(tex_loc5, 5);
-	glUniform1i(tex_cube_loc, 9);
+	glUniform1i(tex_cube_loc, 11);
 	glUniform1i(tex_loc4, 0);
 
 	//send the light position in eye coordinates
@@ -1961,351 +2478,12 @@ void renderScene(void) {
 	glUniform4fv(lPos_uniformId8, 1, res10);
 
 
-	//From here on out, we are going to be placing several objects 
-	//that have no function
-	/*
-	//SPIDER (came after table)
-	pushMatrix(MODEL);
-
-	translate(MODEL, -2.0f, 1.5f, -45.0f);
-	scale(MODEL, 0.02f, 0.02f, 0.02f);
-	rotate(MODEL, 180, 0, 1.0f, 0);
-
-	aiRecursive_render(scene, scene->mRootNode);
-
-	popMatrix(MODEL);
-
-
-
-	//VELAS (came after cheerios)
-	objId = 782;
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-	glUniform4fv(loc, 1, mesh[objId].mat.specular);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
-	pushMatrix(MODEL);
-
-	translate(MODEL, -0.5f, 1.5f, -48.0f);
-
-	// send matrices to OGL
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-	computeNormalMatrix3x3();
-	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-	// Render mesh
-	glBindVertexArray(mesh[objId].vao);
-
-	if (!shader.isProgramValid()) {
-		printf("Program Not Valid!\n");
-		exit(1);
-	}
-	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
-	popMatrix(MODEL);
-
-
-	//VELAS
-	objId = 783;
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-	glUniform4fv(loc, 1, mesh[objId].mat.specular);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
-	pushMatrix(MODEL);
-
-	translate(MODEL, 10.5f, 1.5f, -48.0f);
-
-	// send matrices to OGL
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-	computeNormalMatrix3x3();
-	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-	// Render mesh
-	glBindVertexArray(mesh[objId].vao);
-
-	if (!shader.isProgramValid()) {
-		printf("Program Not Valid!\n");
-		exit(1);
-	}
-	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
-	popMatrix(MODEL);
-
-
-	//VELAS
-	objId = 784;
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-	glUniform4fv(loc, 1, mesh[objId].mat.specular);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
-	pushMatrix(MODEL);
-
-	translate(MODEL, -0.5f, 1.5f, 48.0f);
-
-	// send matrices to OGL
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-	computeNormalMatrix3x3();
-	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-	// Render mesh
-	glBindVertexArray(mesh[objId].vao);
-
-	if (!shader.isProgramValid()) {
-		printf("Program Not Valid!\n");
-		exit(1);
-	}
-	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
-	popMatrix(MODEL);
-
-
-	//VELAS
-	objId = 785;
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-	glUniform4fv(loc, 1, mesh[objId].mat.specular);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
-	pushMatrix(MODEL);
-
-	translate(MODEL, -38.0f, 1.5f, 48.0f);
-
-	// send matrices to OGL
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-	computeNormalMatrix3x3();
-	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-	// Render mesh
-	glBindVertexArray(mesh[objId].vao);
-
-	if (!shader.isProgramValid()) {
-		printf("Program Not Valid!\n");
-		exit(1);
-	}
-	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
-	popMatrix(MODEL);
-
-
-	//VELAS
-	objId = 786;
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-	glUniform4fv(loc, 1, mesh[objId].mat.specular);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
-	pushMatrix(MODEL);
-
-	translate(MODEL, -38.0f, 1.5f, -48.0f);
-
-	// send matrices to OGL
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-	computeNormalMatrix3x3();
-	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-	// Render mesh
-	glBindVertexArray(mesh[objId].vao);
-
-	if (!shader.isProgramValid()) {
-		printf("Program Not Valid!\n");
-		exit(1);
-	}
-	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
-	popMatrix(MODEL);
-
-
-	//VELAS
-	objId = 787;
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-	glUniform4fv(loc, 1, mesh[objId].mat.specular);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
-	pushMatrix(MODEL);
-
-	translate(MODEL, -19.0f, 1.5f, 0.0f);
-	scale(MODEL, 2.0f, 1.0f, 2.0f);
-
-	// send matrices to OGL
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-	computeNormalMatrix3x3();
-	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-	// Render mesh
-	glBindVertexArray(mesh[objId].vao);
-
-	if (!shader.isProgramValid()) {
-		printf("Program Not Valid!\n");
-		exit(1);
-	}
-	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
-	popMatrix(MODEL);
-
-
-
-
-	// Environmental reflection cube (came after billboards)
-
-	//Enable blending
-	glEnable(GL_BLEND);
-
-	objId = 794;
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-	glUniform4fv(loc, 1, mesh[objId].mat.specular);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
-	pushMatrix(MODEL);
-
-	translate(MODEL, 10.0f, 2.0f, -45.0f);
-
-	// send matrices to OGL
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniform1i(texMode_uniformId, 6);
-	glUniformMatrix4fv(view_uniformId, 1, GL_FALSE, mMatrix[VIEW]);
-	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-	computeNormalMatrix3x3();
-	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-	// Render mesh
-	glBindVertexArray(mesh[objId].vao);
-
-	if (!shader.isProgramValid()) {
-		printf("Program Not Valid!\n");
-		exit(1);
-	}
-	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
-	popMatrix(MODEL);
-	glDisable(GL_BLEND);
-	//glDepthMask(GL_TRUE); //acho que está a mais
-
-
-	//BUMP CUBE (came after environmental reflection cube)
-	objId = 795;
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.ambient");
-	glUniform4fv(loc, 1, mesh[objId].mat.ambient);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.diffuse");
-	glUniform4fv(loc, 1, mesh[objId].mat.diffuse);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.specular");
-	glUniform4fv(loc, 1, mesh[objId].mat.specular);
-	loc = glGetUniformLocation(shader.getProgramIndex(), "mat.shininess");
-	glUniform1f(loc, mesh[objId].mat.shininess);
-	pushMatrix(MODEL);
-
-	translate(MODEL, 10.0f, 2.0f, -47.0f);
-
-	// send matrices to OGL
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniform1i(texMode_uniformId, 7);
-	glUniformMatrix4fv(view_uniformId, 1, GL_FALSE, mMatrix[VIEW]);
-	glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-	computeNormalMatrix3x3();
-	glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-	// Render mesh
-	glBindVertexArray(mesh[objId].vao);
-
-	if (!shader.isProgramValid()) {
-		printf("Program Not Valid!\n");
-		exit(1);
-	}
-	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-
-	popMatrix(MODEL);
-
-
-
-	// Render Sky Box (came after bumb cube)
-	objId = 792;
-	glUniform1i(texMode_uniformId, 4);
-
-	//it won't write anything to the zbuffer; all subsequently drawn scenery to be in front of the sky box.
-	glDepthMask(GL_FALSE);
-	glFrontFace(GL_CW); // set clockwise vertex order to mean the front
-
-	pushMatrix(MODEL);
-	pushMatrix(VIEW);  //se quiser anular a translação
-
-	//  Fica mais realista se não anular a translação da câmara
-	// Cancel the translation movement of the camera - de acordo com o tutorial do Antons
-	mMatrix[VIEW][12] = 0.0f;
-	mMatrix[VIEW][13] = 0.0f;
-	mMatrix[VIEW][14] = 0.0f;
-
-	scale(MODEL, 100.0f, 100.0f, 100.0f);
-	translate(MODEL, -0.5f, -0.5f, -0.5f);
-
-	// send matrices to OGL
-	glUniformMatrix4fv(model_uniformId, 1, GL_FALSE, mMatrix[MODEL]); //Transformação de modelação do cubo unitário para o "Big Cube"
-	computeDerivedMatrix(PROJ_VIEW_MODEL);
-	glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-
-	glBindVertexArray(mesh[objId].vao);
-	glDrawElements(mesh[objId].type, mesh[objId].numIndexes, GL_UNSIGNED_INT, 0);
-	glBindVertexArray(0);
-	popMatrix(MODEL);
-	popMatrix(VIEW);
-
-	glFrontFace(GL_CCW); // restore counter clockwise vertex order to mean the front
-	glDepthMask(GL_TRUE);
-	glUniform1i(texMode_uniformId, 0);
-
-
-
-	//Lens Flare (comes after fireworks)
-	*/
-
+	//Draw sky box before any objects
+	//SKY BOX
+	drawSkyBox();
 
 	//Drawing objects
-	if (camY > 0.0f) { //Make sure reflections and shadows are not on the bottom side of the floor
+	if (camYGlobal >= 0.0f) { //Make sure reflections and shadows are not on the bottom side of the floor
 		glEnable(GL_STENCIL_TEST);        // Escrever 1 no stencil buffer onde se for desenhar a reflexão e a sombra
 		glStencilFunc(GL_NEVER, 0x1, 0x1);
 		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
@@ -2443,7 +2621,12 @@ void renderScene(void) {
 	renderedFlag = 1;
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	//Texto
+	if (cameraFlag != 1 && cameraFlag != 2 && camYGlobal >= 0.0f && lightFlag2 == 1) {
+		//LENS FLARE
+		drawLensFlare();
+	}
+
+	//HUD
 	drawHUDText();
 
 	glutSwapBuffers();
@@ -2506,6 +2689,8 @@ void processKeys(unsigned char key, int xx, int yy) {
 		case 'f': if (fogFlag == 1) { fogFlag = 0; }
 				else { fogFlag = 1; } break;
 
+		case 'r': restart(); break;
+
 		case '<': if (drawRaceTrackShadowsReflection == 1) { drawRaceTrackShadowsReflection = 0; }
 				else { drawRaceTrackShadowsReflection = 1; } break;
 		}
@@ -2558,6 +2743,8 @@ void processKeys(unsigned char key, int xx, int yy) {
 
 		case 'f': if (fogFlag == 1) { fogFlag = 0; }
 				else { fogFlag = 1; } break;
+
+		case 'r': restart(); break;
 
 		case '<': if (drawRaceTrackShadowsReflection == 1) { drawRaceTrackShadowsReflection = 0; }
 				else { drawRaceTrackShadowsReflection = 1; } break;
@@ -2744,8 +2931,8 @@ void init()
 
 	glGenTextures(5, TextureArray);
 	Texture2D_Loader(TextureArray, "happy-human.tga", 0);
-	Texture2D_Loader(TextureArray, "table-cloth3.jpg", 1);
-	Texture2D_Loader(TextureArray, "cloth2.jpg", 2);
+	Texture2D_Loader(TextureArray, "marble.jpg", 1);
+	Texture2D_Loader(TextureArray, "tiled_floor.jpg", 2);
 	Texture2D_Loader(TextureArray, "particle.tga", 3);
 	Texture2D_Loader(TextureArray, "normal.tga", 4);
 	Texture2D_Loader(TextureArray, "stone.tga", 5);
@@ -2774,7 +2961,6 @@ void init()
 	float amb1[] = { 0.3f, 0.0f, 0.0f, 1.0f };
 	float diff1[] = { 0.3f, 0.0f, 0.0f, 1.0f };
 	float spec1[] = { 0.9f, 0.9f, 0.9f, 1.0f };
-	shininess = 500.0;
 
 	//Orange
 	float amb2[] = { 0.7f, 0.3f, 0.0f, 1.0f };
@@ -2801,6 +2987,11 @@ void init()
 	float diff6[] = { 1.0f, 1.0f, 0.6f, 1.0f };
 	float spec6[] = { 0.8f, 0.8f, 0.8f, 1.0f };
 
+	//Grey
+	float amb7[] = { 0.8f, 0.8f, 1.0f, 1.0f };
+	float diff7[] = { 0.8f, 0.8f, 1.0f, 1.0f };
+	float spec7[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+
 	//Billboard specular color
 	float billboard_spec[] = { 0.2f, 0.2f, 0.2f, 1.0f };
 	float billboard_shininess = 100.0f;
@@ -2809,7 +3000,7 @@ void init()
 	//TABLE
 	objId = 0;
 	memcpy(mesh[objId].mat.ambient, amb, 4 * sizeof(float));
-	diff[3] = 0.5f;
+	diff[3] = 0.90f;
 	memcpy(mesh[objId].mat.diffuse, diff, 4 * sizeof(float));
 	diff[3] = 1.0f;
 	memcpy(mesh[objId].mat.specular, spec, 4 * sizeof(float));
@@ -2817,6 +3008,10 @@ void init()
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
 	createCube();
+
+	//SPIDER
+	//creation of Mymesh array with VAO Geometry and Material
+	myMeshes = createMeshFromAssimp(scene);
 
 	//CAR
 	objId = 1;
@@ -3004,7 +3199,7 @@ void init()
 		objId++;
 	}
 
-	//VELAS
+	//CANDLES
 	objId = 782;
 	for (int i = 0; i < 6; i++) {
 		memcpy(mesh[objId].mat.ambient, amb6, 4 * sizeof(float));
@@ -3047,16 +3242,16 @@ void init()
 	mesh[objId].mat.texCount = texcount;
 	createCube();
 
-	//PARTICLES
+	//FIREWORK PARTICLES
 	objId = 791;
 	mesh[objId].mat.texCount = texcount;
 	createQuad(2, 2);
 
 	//SKY BOX
 	objId = 792;
-	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.ambient, amb7, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff7, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec7, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
@@ -3067,7 +3262,7 @@ void init()
 	createQuad(1, 1);
 	loadFlareFile(&AVTflare, "flare.txt");
 
-	//REFLECTION CUBE
+	//ENVIRONMENTAL REFLECTION CUBE
 	objId = 794;
 	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
@@ -3079,9 +3274,9 @@ void init()
 
 	//BUMP CUBE
 	objId = 795;
-	memcpy(mesh[objId].mat.ambient, amb1, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.diffuse, diff1, 4 * sizeof(float));
-	memcpy(mesh[objId].mat.specular, spec1, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.ambient, amb7, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.diffuse, diff7, 4 * sizeof(float));
+	memcpy(mesh[objId].mat.specular, spec7, 4 * sizeof(float));
 	memcpy(mesh[objId].mat.emissive, emissive, 4 * sizeof(float));
 	mesh[objId].mat.shininess = shininess;
 	mesh[objId].mat.texCount = texcount;
@@ -3161,4 +3356,3 @@ int main(int argc, char** argv) {
 	return(0);
 
 }
-
