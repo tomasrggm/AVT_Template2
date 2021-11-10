@@ -496,6 +496,7 @@ void changeSize(int w, int h) {
 	}
 
 	else if (cameraFlag == 4) {
+		/*
 		if (w <= h)
 			ortho(	-2.0, 
 					2.0, 
@@ -546,6 +547,7 @@ void changeSize(int w, int h) {
 		glBindVertexArray(0);
 
 		loadIdentity(PROJECTION);
+		*/
 		perspective(60.0f, ratio, 0.1f, 1000.0f);
 	}
 
@@ -1786,7 +1788,7 @@ void drawSpectatorBillboards()
 	//Despite of blending, they are considered opaque so z-buffer works normally
 
 	float pos[3];
-	float cam[3] = { camX, camY, camZ };
+	float cam[3] = { camX, camYGlobal, camZ };
 	objId = 788;
 	for (int i = -6; i < 2; i++) {
 		for (int j = -7; j < 7; j++) {
@@ -2532,8 +2534,8 @@ void renderScene(void) {
 	//Drawing objects
 	if (camYGlobal >= 0.0f) { //Make sure reflections and shadows are not on the bottom side of the floor
 		glEnable(GL_STENCIL_TEST);        // Escrever 1 no stencil buffer onde se for desenhar a reflexão e a sombra
-		glStencilFunc(GL_NEVER, 0x1, 0x1);
-		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+		glStencilFunc(GL_NEVER, 0x1, 0x1); //We define how we will set the stencil function
+		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE); //We define how we will modify the stencil
 
 		// Fill stencil buffer with the table; never rendered into color buffer
 		drawTable();
@@ -2541,7 +2543,7 @@ void renderScene(void) {
 		glUniform1i(shadowMode_uniformId, 0);  //iluminação phong
 
 		// Desenhar apenas onde o stencil buffer esta a 1
-		glStencilFunc(GL_EQUAL, 0x1, 0x1);
+		glStencilFunc(GL_EQUAL, 0x1, 0x1); //Where stencil is 1
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
 		// Render the reflected geometry
@@ -2618,7 +2620,7 @@ void renderScene(void) {
 
 		//Rear-View
 		if (cameraFlag == 4) { //When we are in the driver's camera
-			/*glClearStencil(0);
+			glClearStencil(0);
 			glClear(GL_STENCIL_BUFFER_BIT);
 
 			//Limit stencil to rear-view mirror
@@ -2631,7 +2633,6 @@ void renderScene(void) {
 
 			//We limit the stencil to the rear-view mirror
 			drawCarRearViewMirror();
-			*/
 
 			//Change to rear-view camera
 			loadIdentity(VIEW);
@@ -2649,6 +2650,8 @@ void renderScene(void) {
 			drawFireworks();
 
 			//Reset camera back to original position
+			loadIdentity(VIEW);
+			loadIdentity(MODEL);
 			cameraFlag = 4;
 			setupCameraLookAts();
 			
@@ -2669,15 +2672,12 @@ void renderScene(void) {
 
 	else {
 		drawTable();
-		drawObjects();
-		drawCarRearView();
-		drawFireworks();
 	}
 
 	renderedFlag = 1;
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	if (cameraFlag != 1 && cameraFlag != 2 && camYGlobal >= 0.0f && lightFlag2 == 1) {
+	if (cameraFlag == 3 && camYGlobal >= 0.0f && lightFlag2 == 1 && fogFlag == 0) {
 		//LENS FLARE
 		drawLensFlare();
 	}
