@@ -41,7 +41,7 @@
 #include "flare.h"
 using namespace std;
 
-#define CAPTION "AVT MicroMachines Project - Delivery 1"
+#define CAPTION "AVT MicroMachines Project - Delivery 2"
 
 #define frand()			((float)rand()/RAND_MAX)
 #define M_PI			3.14159265
@@ -149,7 +149,7 @@ float lightScreenPos[3];  //Position of the light in Window Coordinates
 
 // Camera Position
 float camX, camY, camZ;
-float camYGlobal;
+float camXGlobal, camYGlobal, camZGlobal;
 
 // Mouse Tracking Variables
 int startX, startY, tracking = 0;
@@ -496,58 +496,6 @@ void changeSize(int w, int h) {
 	}
 
 	else if (cameraFlag == 4) {
-		/*
-		if (w <= h)
-			ortho(	-2.0, 
-					2.0, 
-					-2.0 * (GLfloat)h / (GLfloat)w,
-					2.0 * (GLfloat)h / (GLfloat)w, 
-					-10, 10);
-		else
-			ortho(	-2.0 * (GLfloat)w / (GLfloat)h,
-					2.0 * (GLfloat)w / (GLfloat)h, 
-					-2.0, 
-					2.0, 
-					-10, 10);
-
-		// load identity matrices for Model-View
-		loadIdentity(VIEW);
-		loadIdentity(MODEL);
-
-		glUseProgram(shader.getProgramIndex());
-
-		//translate(MODEL, carX, carY, carZ);
-		//rotate(MODEL, angulo, 0, 1.0f, 0);
-		//translate(MODEL, -0.235f, 1.015f, 0.39f);
-		//translate(MODEL, -0.5f, -0.5f, -0.5f);
-		//scale(MODEL, 0.47f, 0.12f, 0.1f);
-
-		// send matrices to OGL
-		computeDerivedMatrix(PROJ_VIEW_MODEL);
-		//glUniformMatrix4fv(vm_uniformId, 1, GL_FALSE, mCompMatrix[VIEW_MODEL]);
-		glUniformMatrix4fv(pvm_uniformId, 1, GL_FALSE, mCompMatrix[PROJ_VIEW_MODEL]);
-		computeNormalMatrix3x3();
-		glUniformMatrix3fv(normal_uniformId, 1, GL_FALSE, mNormal3x3);
-
-		glClearStencil(0);
-		glClear(GL_STENCIL_BUFFER_BIT);
-		glEnable(GL_STENCIL_TEST);
-
-		glStencilFunc(GL_NEVER, 0x1, 0x1);
-		glStencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
-
-		// Render mesh
-		glBindVertexArray(mesh[796].vao);
-
-		if (!shader.isProgramValid()) {
-			printf("Program Not Valid!\n");
-			exit(1);
-		}
-		glDrawElements(mesh[796].type, mesh[796].numIndexes, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
-
-		loadIdentity(PROJECTION);
-		*/
 		perspective(60.0f, ratio, 0.1f, 1000.0f);
 	}
 
@@ -1788,7 +1736,7 @@ void drawSpectatorBillboards()
 	//Despite of blending, they are considered opaque so z-buffer works normally
 
 	float pos[3];
-	float cam[3] = { camX, camYGlobal, camZ };
+	float cam[3] = { camXGlobal, camYGlobal, camZGlobal };
 	objId = 788;
 	for (int i = -6; i < 2; i++) {
 		for (int j = -7; j < 7; j++) {
@@ -2123,7 +2071,7 @@ void drawFireworks()
 	GLint loc;
 	float particle_color[4];
 	float pos[3];
-	float cam[3] = { camX, camY, camZ };
+	float cam[3] = { camXGlobal, camYGlobal, camZGlobal };
 
 	//Enable blending and make Z-buffer read-only
 	glEnable(GL_BLEND);
@@ -2337,34 +2285,42 @@ void drawHUDText()
 void setupCameraLookAts()
 {
 	if (cameraFlag == 1) { //Fixed ortho camera
-		lookAt(-19.5f, 10.0f, 0, -19.5f, 0, 0 + 0.00005f, 0, 1, 0);
-		camYGlobal = 10.0f;
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
+
+		camXGlobal = -19.5f;
+		camYGlobal = 10.0f;
+		camZGlobal = 0.0f;
+		lookAt(camXGlobal, camYGlobal, camZGlobal, -19.5f, 0, 0 + 0.00005f, 0, 1, 0);
 	}
 	else if (cameraFlag == 2) { //Fixed perspective camera
-		//lookAt(carX, 15.0f, carZ, carX, carY, carZ + 0.01, 0, 1, 0);
-		//lookAt(-19.5, 0.0f, -70.0f, -19.5f, 0, 0 + 0.01, 0, 1, 0);
-		lookAt(20.0f, 40.0, 0, -19.5f, 0, 0 + 0.01, 0, 1, 0);
-		camYGlobal = 40.0f;
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
+
+		camXGlobal = 20.0f;
+		camYGlobal = 40.0f;
+		camZGlobal = 0.0f;
+		lookAt(camXGlobal, camYGlobal, camZGlobal, -19.5f, 0, 0 + 0.01, 0, 1, 0);
 	}
 	else if (cameraFlag == 3) { //Movement camera
-		lookAt(camX + carX, camY + carY, camZ + carZ, carX, carY, carZ, 0, 1, 0);
+		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
+
+		camXGlobal = camX + carX;
 		camYGlobal = camY + carY;
+		camZGlobal = camZ + carZ;
+		lookAt(camXGlobal, camYGlobal, camZGlobal, carX, carY, carZ, 0, 1, 0);
 
 		//Translate camera to car's coordinates, rotate, and return back to original position
 		translate(VIEW, carX, carY, carZ);
 		rotate(VIEW, -angulo, 0.0, 1.0, 0.0);
 		translate(VIEW, -carX, -carY, -carZ);
-
-		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 	}
 
 	else if (cameraFlag == 4) { //Driver's camera
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 
-		lookAt(carX, carY + 1.0, carZ - 1.0, carX, carY + 1.0, carZ, 0, 1, 0);
-		camYGlobal = carY + 1.0;
+		camXGlobal = carX;
+		camYGlobal = carY + 1.0f;
+		camZGlobal = carZ - 1.0f;
+		lookAt(camXGlobal, camYGlobal, camZGlobal, carX, carY + 1.0, carZ, 0, 1, 0);
 
 		//Translate camera to car's coordinates, rotate, and return back to original position
 		translate(VIEW, carX, carY, carZ);
@@ -2375,9 +2331,10 @@ void setupCameraLookAts()
 	else if (cameraFlag == 5) { //Rear-view Camera
 		changeSize(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
 
-		//lookAt(carX, carY + 1.0, carZ - 1.0, carX, carY + 1.0, carZ, 0, 1, 0);
-		lookAt(carX, carY + 1.0, carZ + 0.5, carX, carY + 1.0, carZ, 0, 1, 0);
-		camYGlobal = carY + 1.0;
+		camXGlobal = carX;
+		camYGlobal = carY + 1.0f;
+		camZGlobal = carZ + 0.5f;
+		lookAt(camXGlobal, camYGlobal, camZGlobal, carX, carY + 1.0, carZ, 0, 1, 0);
 
 		//Translate camera to car's coordinates, rotate, and return back to original position
 		translate(VIEW, carX, carY, carZ);

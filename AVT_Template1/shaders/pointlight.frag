@@ -28,8 +28,8 @@ uniform	sampler2D texUnitSpec;
 uniform	sampler2D texUnitNormalMap;
 
 uniform sampler2D texmap; //billboard
-uniform sampler2D texmap1; //table-cloth
-uniform sampler2D texmap2; //cloth
+uniform sampler2D texmap1; //marble
+uniform sampler2D texmap2; //tiled-floor
 uniform sampler2D texmap3; //fireworks
 uniform sampler2D texmap4; //lens flare
 uniform sampler2D texmap5; //stone
@@ -75,7 +75,7 @@ void main() {
 
 				if (normalMap)
 					n = normalize(2.0 * texture(texUnitNormalMap, DataIn[i].tex_coord).rgb - 1.0);  //normal in tangent space
-				else if (texMode == 7)
+				else if (texMode == 7) //Bump
 					n = normalize(2.0 * texture(texNormalMap, DataIn[i].tex_coord).rgb - 1.0);  //normal in tangent space
 				else
 					n = normalize(DataIn[i].normal);
@@ -109,12 +109,12 @@ void main() {
 					vec3 h = normalize(l + e);
 					float intSpec = max(dot(h, n), 0.0);
 					spec = auxSpec * pow(intSpec, mat.shininess);
-					if (texMode == 1) {
+					if (texMode == 1) { //Multitextured Floor
 						texel1 = texture(texmap1, DataIn[i].tex_coord);
 						texel2 = texture(texmap2, DataIn[i].tex_coord);
 						accumulatedValue += (spec + intensity * diff * texel1 * texel2) * luzDifusa;
 					}
-					else if (texMode == 2) {
+					else if (texMode == 2) { //Billboard
 						texel = texture(texmap, DataIn[i].tex_coord);
 						if (texel.a == 0.0) discard;
 						else {
@@ -122,7 +122,7 @@ void main() {
 							accumulatedValue[3] += texel.a;
 						}
 					}
-					else if (texMode == 3) {
+					else if (texMode == 3) { //Fireworks
 						texel3 = texture(texmap3, DataIn[i].tex_coord);
 						if (texel3.a == 0.0 || (mat.diffuse.a == 0.0)) discard;
 						else {
@@ -130,7 +130,7 @@ void main() {
 							accumulatedValue[3] += texel3.a;
 						}
 					}
-					else if (texMode == 6) {
+					else if (texMode == 6) { //Environment
 						vec3 reflected1 = vec3(transpose(m_View) * vec4(vec3(reflect(-e, n)), 0.0));
 						reflected1.x = -reflected1.x;
 						texel = texture(cubeMap, reflected1);
@@ -139,7 +139,7 @@ void main() {
 						aux_color = max(intensity * aux_color + spec, 0.1 * aux_color);
 						accumulatedValue += vec4(aux_color.rgb, 1.0);
 					}
-					else if (texMode == 7) {
+					else if (texMode == 7) { //Bump
 						texel4 = texture(texmap5, DataIn[i].tex_coord);
 						accumulatedValue += (spec + intensity * diff * texel4) * luzDifusa;
 					}
@@ -162,12 +162,12 @@ void main() {
 						vec3 h = normalize(ld + eye);
 						float intSpec = max(dot(h, n), 0.0);
 						spec = auxSpec * pow(intSpec, mat.shininess);
-						if (texMode == 1) {
+						if (texMode == 1) { //Multitextured Floor
 							texel1 = texture(texmap1, DataIn[i].tex_coord);
 							texel2 = texture(texmap2, DataIn[i].tex_coord);
 							accumulatedValue += (spec + intensity * diff * texel1 * texel2) * luzHolofote;
 						}
-						else if (texMode == 2) {
+						else if (texMode == 2) { //Billboard
 							texel = texture(texmap, DataIn[i].tex_coord);
 							if (texel.a == 0.0) discard;
 							else {
@@ -175,7 +175,7 @@ void main() {
 								accumulatedValue[3] += texel.a;
 							}
 						}
-						else if (texMode == 3) {
+						else if (texMode == 3) { //Fireworks
 							texel3 = texture(texmap3, DataIn[i].tex_coord);
 							if (texel3.a == 0.0 || (mat.diffuse.a == 0.0)) discard;
 							else {
@@ -183,7 +183,7 @@ void main() {
 								accumulatedValue[3] += texel3.a;
 							}
 						}
-						else if (texMode == 7) {
+						else if (texMode == 7) { //Bump
 							texel4 = texture(texmap5, DataIn[i].tex_coord);
 							accumulatedValue += (spec + intensity * diff * texel4) * luzHolofote;
 						}
@@ -201,7 +201,7 @@ void main() {
 						vec3 h = normalize(ld + eye);
 						float intSpec = max(dot(h, n), 0.0);
 						spec = auxSpec * pow(intSpec, mat.shininess);
-						if (texMode == 2) {
+						if (texMode == 2) { //Billboard
 							texel = texture(texmap, DataIn[i].tex_coord);
 							if (texel.a == 0.0) discard;
 							else {
@@ -209,7 +209,7 @@ void main() {
 								accumulatedValue[3] += texel.a;
 							}
 						}
-						else if (texMode == 3) {
+						else if (texMode == 3) { //Fireworks
 							texel3 = texture(texmap3, DataIn[i].tex_coord);
 							if (texel3.a == 0.0 || (mat.diffuse.a == 0.0)) discard;
 							else {
@@ -228,7 +228,7 @@ void main() {
 			colorOut[3] = mat.diffuse.a;
 		}
 
-		else if (texMode == 2) { //Ensure directional light applies to the tree billboards
+		else if (texMode == 2) { //Ensure directional light applies to the billboards
 			if (texel.a == 0.0) discard;
 			else {
 				colorOut = max(accumulatedValue, mat.ambient * luzDirectional * texel);
@@ -244,26 +244,23 @@ void main() {
 			}
 		}
 
-		else if (texMode == 4) {
-			vec4 texel3 = vec4(0.0);
-			for (int i = 0; i < 6; ++i) {
-				texel3 += texture(cubeMap, DataIn[i].skyboxTexCoord);
-			}
+		else if (texMode == 4) { //Skybox
+			vec4 texel3 = texture(cubeMap, DataIn[5].skyboxTexCoord);
 			colorOut = texel3;
 		}
 
-		else if (texMode == 5) {
+		else if (texMode == 5) { //Lens Flare
 			texel2 = texture(texmap4, DataIn[5].tex_coord);
 			if ((texel2.a == 0.0) || (mat.diffuse.a == 0.0)) discard;
 			else
 				colorOut = texel2 * mat.diffuse;
 		}
 
-		else if (texMode == 6) {
+		else if (texMode == 6) { //Environment
 			colorOut = accumulatedValue;
 		}
 
-		else if (texMode == 7) {
+		else if (texMode == 7) { //Bump
 			colorOut = max(accumulatedValue, mat.ambient * luzDirectional * texel4);
 		}
 
